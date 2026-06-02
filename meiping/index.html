@@ -307,6 +307,12 @@
       color: rgba(255,255,255,0.3); font-size: 13px; margin: 0;
     }
     .celcam-preview-card.has-image .celcam-placeholder { display: none; }
+    .celcam-video {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; border-radius: 20px; display: none; z-index: 1;
+    }
+    .celcam-video.active { display: block; }
+    .celcam-preview-card.has-video .celcam-placeholder { display: none; }
 
     /* 中间大圆拍照按钮 */
     .celcam-controls {
@@ -1953,8 +1959,10 @@
     </div>
     <input type="file" class="hidden-input" id="celcam-input-camera" accept="image/*" capture onchange="handleCelebrityFile(event)">
     <input type="file" class="hidden-input" id="celcam-input-album" accept="image/*" onchange="handleCelebrityFile(event)">
+    <video id="celcam-video" class="celcam-video" autoplay playsinline></video>
+    <canvas id="celcam-canvas" class="hidden-input"></canvas>
     <div class="celcam-controls">
-      <button class="celcam-shutter" onclick="takeCelebrityPhoto()">
+      <button class="celcam-shutter" id="celcam-shutter-btn" onclick="takeCelebrityPhoto()">
         <div class="celcam-shutter-inner">
           <svg width="36" height="36" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <rect x="6" y="10" width="36" height="28" rx="4"/>
@@ -2541,7 +2549,67 @@
     }
     function goToCelebrityCamera() { showPage('page-celebrity-camera'); }
 
-    function takeCelebrityPhoto() { document.getElementById('celcam-input-camera').click(); }
+    let celcamStream = null;
+    let celcamReady = false; // 摄像头已就绪，再点即拍照
+
+    async function takeCelebrityPhoto() {
+      // 如果摄像头已开启 → 拍照
+      if (celcamReady) {
+        captureWebcamFrame();
+        return;
+      }
+      // 尝试打开网页摄像头
+      try {
+        celcamStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 960 } }
+        });
+        const video = document.getElementById('celcam-video');
+        video.srcObject = celcamStream;
+        video.classList.add('active');
+        document.getElementById('celcam-preview').classList.add('has-video');
+        celcamReady = true;
+        // 按钮变成"拍照"
+        const inner = document.querySelector('#celcam-shutter-btn .celcam-shutter-inner');
+        inner.innerHTML = '<span style="font-size:14px;font-weight:700">拍照</span>';
+        inner.style.background = 'radial-gradient(circle at 40% 35%, #E8C848, #C8963E)';
+        inner.style.color = '#1A1815';
+      } catch (e) {
+        // 桌面摄像头不可用 → 用手机 capture
+        document.getElementById('celcam-input-camera').click();
+      }
+    }
+
+    function captureWebcamFrame() {
+      const video = document.getElementById('celcam-video');
+      const canvas = document.getElementById('celcam-canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      const base64 = canvas.toDataURL('image/jpeg', 0.7);
+      currentImage = { base64, file: null };
+      // 显示在预览区
+      const img = document.getElementById('celcam-preview-img');
+      img.src = base64;
+      const preview = document.getElementById('celcam-preview');
+      preview.classList.add('has-image');
+      document.getElementById('celcam-btn-go').classList.add('ready');
+      // 关闭摄像头
+      stopWebcam();
+    }
+
+    function stopWebcam() {
+      if (celcamStream) { celcamStream.getTracks().forEach(t => t.stop()); celcamStream = null; }
+      celcamReady = false;
+      const video = document.getElementById('celcam-video');
+      video.classList.remove('active');
+      video.srcObject = null;
+      document.getElementById('celcam-preview').classList.remove('has-video');
+      const inner = document.querySelector('#celcam-shutter-btn .celcam-shutter-inner');
+      inner.innerHTML = `<svg width="36" height="36" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="4"/><circle cx="24" cy="24" r="11"/><circle cx="24" cy="24" r="4" fill="currentColor"/></svg>`;
+      inner.style.background = 'radial-gradient(circle at 40% 35%, #2A2520, #1E1B17)';
+      inner.style.color = '#E8C848';
+    }
+
     function pickCelebrityAlbum() { document.getElementById('celcam-input-album').click(); }
 
     function handleCelebrityFile(event) {
@@ -2563,6 +2631,7 @@
     }
 
     function resetCelebrityCameraUI() {
+      stopWebcam();
       const preview = document.getElementById('celcam-preview');
       const img = document.getElementById('celcam-preview-img');
       preview.classList.remove('has-image');
