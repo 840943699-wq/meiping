@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   const namesParam = req.query?.names || '';
   if (!namesParam) return res.status(400).json({ error: '缺少明星名字' });
 
-  const names = namesParam.split(',').map(n => decodeURIComponent(n.trim())).filter(Boolean);
+  const names = decodeURIComponent(namesParam).split(',').map(n => n.trim()).filter(Boolean);
 
   // 获取指定标题页面的缩略图
   const getPageThumb = async (lang, title) => {

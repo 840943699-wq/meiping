@@ -363,7 +363,7 @@ async function handleCelebrityPhoto(req, res, url) {
     return;
   }
 
-  const names = namesParam.split(',').map(n => decodeURIComponent(n.trim())).filter(Boolean);
+  const names = decodeURIComponent(namesParam).split(',').map(n => n.trim()).filter(Boolean);
 
   const getPageThumb = async (lang, title) => {
     try {
