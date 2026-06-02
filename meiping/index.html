@@ -1528,12 +1528,16 @@
     /* 明星头像 — 纯 CSS 高级风格 */
     .cel-avatar {
       width: 64px; height: 64px; border-radius: 50%;
-      flex-shrink: 0;
+      flex-shrink: 0; position: relative; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
       font-size: 22px; font-weight: 700; color: #fff;
       letter-spacing: 2px;
       box-shadow: inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 14px rgba(0,0,0,0.12);
       text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+    .cel-avatar img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; border-radius: 50%; z-index: 2;
     }
     .cel-avatar.av-gold   { background: linear-gradient(150deg, #E2B84A 0%, #C8963E 50%, #A67B2B 100%); }
     .cel-avatar.av-silver { background: linear-gradient(150deg, #C8C8CC 0%, #9E9EA6 50%, #7A7A82 100%); }
@@ -2960,25 +2964,33 @@
       loadCelebrityPhotos(matches);
     }
 
-    function loadCelebrityPhotos(matches) {
+    async function loadCelebrityPhotos(matches) {
       const avatars = document.querySelectorAll('.cel-avatar');
-      avatars.forEach((av, i) => {
+      // 逐个请求（间隔 500ms 防限流）
+      for (let i = 0; i < avatars.length; i++) {
         const name = matches[i]?.name;
-        if (!name || !av) return;
-        // 直接调 Wikipedia 摘要 REST API
-        const tryFetch = (lang) =>
-          fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}?redirect=true`)
-            .then(r => r.ok ? r.json().then(d => d.thumbnail?.source || null) : null)
-            .catch(() => null);
-
-        tryFetch('zh').then(src => src || tryFetch('en')).then(src => {
-          if (!src) return;
+        const av = avatars[i];
+        if (!name || !av) continue;
+        // 调百度图片代理
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 8000);
+          const resp = await fetch(`/api/celebrity-photo?name=${encodeURIComponent(name)}`, { signal: ctrl.signal });
+          clearTimeout(timer);
+          if (!resp.ok) continue;
+          const data = await resp.json();
+          if (!data.url) continue;
+          // 创建 img 替换文字
           const img = document.createElement('img');
-          img.src = src; img.referrerPolicy = 'no-referrer';
-          img.onload = () => { av.textContent = ''; av.appendChild(img); };
-          img.onerror = () => img.remove();
-        });
-      });
+          img.src = data.url;
+          img.referrerPolicy = 'no-referrer';
+          img.onload = () => { av.textContent = ''; };
+          img.onerror = () => { img.remove(); };
+          av.appendChild(img);
+        } catch (e) { /* skip */ }
+        // 间隔 500ms 再请求下一个
+        await new Promise(r => setTimeout(r, 500));
+      }
     }
 
     // ── 结果渲染 ──────────────────────────────
