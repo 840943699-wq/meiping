@@ -2294,7 +2294,7 @@
       if (!file) return;
       if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
 
-      compressImage(file, 2048).then(result => {
+      compressImage(file, 1200, 0.55).then(result => {
         currentImage = { base64: result.base64, file: file };
         const preview = document.getElementById('preview');
         const img = document.getElementById('preview-img');
