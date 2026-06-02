@@ -1525,22 +1525,21 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* 明星头像 */
+    /* 明星头像 — 纯 CSS 高级风格 */
     .cel-avatar {
-      width: 56px; height: 56px; border-radius: 50%;
-      flex-shrink: 0; position: relative; overflow: hidden;
-      background: linear-gradient(135deg, #F5F0E8, #E8DDD0);
+      width: 64px; height: 64px; border-radius: 50%;
+      flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 700; color: #fff;
+      letter-spacing: 2px;
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 14px rgba(0,0,0,0.12);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.15);
     }
-    .cel-avatar img {
-      width: 100%; height: 100%; object-fit: cover;
-      position: absolute; inset: 0; z-index: 2;
-      transition: opacity 0.4s;
-    }
-    .cel-avatar .cel-av-fallback {
-      font-size: 18px; font-weight: 700; color: #8B7355;
-      z-index: 1;
-    }
+    .cel-avatar.av-gold   { background: linear-gradient(150deg, #E2B84A 0%, #C8963E 50%, #A67B2B 100%); }
+    .cel-avatar.av-silver { background: linear-gradient(150deg, #C8C8CC 0%, #9E9EA6 50%, #7A7A82 100%); }
+    .cel-avatar.av-bronze { background: linear-gradient(150deg, #D4A87C 0%, #B8863E 50%, #8B5E2E 100%); }
+    .cel-avatar.av-4th    { background: linear-gradient(150deg, #B8C0D0 0%, #8B95A8 50%, #6B7488 100%); }
+    .cel-avatar.av-5th    { background: linear-gradient(150deg, #C0BFB8 0%, #9E9D95 50%, #7D7C74 100%); }
 
     /* 匹配信息 */
     .cel-match-info {
@@ -2920,19 +2919,21 @@
       const matches = r.matches || [];
       const rankMarks = ['🥇', '🥈', '🥉', '④', '⑤'];
 
+      const avatarClasses = ['av-gold', 'av-silver', 'av-bronze', 'av-4th', 'av-5th'];
+
       matches.forEach((m, i) => {
         const isTop = i === 0;
         const pct = m.percentage || Math.max(95 - i * 12, 50);
-        const initial = m.name ? m.name.charAt(0) : '星';
+        // 取名字前两个字做头像
+        const initials = m.name ? m.name.slice(0, 2) : '明星';
+        const avCls = avatarClasses[i] || 'av-5th';
         const delay = `${i * 0.12}s`;
 
         const card = document.createElement('div');
         card.className = 'cel-match-card' + (isTop ? ' cel-top' : '');
         card.style.setProperty('--delay', delay);
         card.innerHTML = `
-          <div class="cel-avatar" data-name="${encodeURIComponent(m.name)}">
-            <span class="cel-av-fallback">${initial}</span>
-          </div>
+          <div class="cel-avatar ${avCls}">${initials}</div>
           <div class="cel-match-info">
             <div class="cel-match-top">
               <span class="cel-match-rank">${rankMarks[i]}</span>
@@ -2954,43 +2955,6 @@
           bar.style.width = pct + '%';
         });
       }, 200);
-
-      // 异步加载明星真人头像
-      loadCelebrityPhotos();
-    }
-
-    async function loadCelebrityPhotos() {
-      const avatars = document.querySelectorAll('.cel-avatar[data-name]');
-      if (avatars.length === 0) return;
-      // 收集所有名字，一次请求批量获取
-      const names = Array.from(avatars).map(av => decodeURIComponent(av.getAttribute('data-name')));
-      const photos = await fetchCelebrityPhotosBatch(names);
-      // 将照片填入对应位置
-      avatars.forEach((av, i) => {
-        const url = photos[names[i]];
-        if (!url) return;
-        const img = document.createElement('img');
-        img.src = url; img.alt = names[i]; img.referrerPolicy = 'no-referrer';
-        img.onload = () => {
-          const fb = av.querySelector('.cel-av-fallback');
-          if (fb) fb.style.display = 'none';
-        };
-        img.onerror = () => { img.remove(); };
-        av.appendChild(img);
-      });
-    }
-
-    async function fetchCelebrityPhotosBatch(names) {
-      try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 15000);
-        const qs = names.map(n => encodeURIComponent(n)).join(',');
-        const resp = await fetch(`/api/celebrity-photo?names=${qs}`, { signal: ctrl.signal });
-        clearTimeout(timer);
-        if (!resp.ok) return {};
-        const data = await resp.json();
-        return data.photos || {};
-      } catch (e) { return {}; }
     }
 
     // ── 结果渲染 ──────────────────────────────
