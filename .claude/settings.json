@@ -3,7 +3,10 @@
     "allow": [
       "Bash(node --check /Volumes/5/zhaopiandafen/meiping/api/celebrity-photo.js)",
       "Bash(node --check /Volumes/5/zhaopiandafen/meiping/server.js)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(curl -s \"https://www.wikidata.org/w/api.php?action=wbsearchentities&search=%E5%88%98%E4%BA%A6%E8%8F%B2&language=zh&format=json&origin=*\")",
+      "Bash(curl -s \"https://www.wikidata.org/w/api.php?action=wbgetclaims&property=P18&entity=Q242676&format=json&origin=*\")",
+      "Bash(python3 -m json.tool)"
     ]
   }
 }
