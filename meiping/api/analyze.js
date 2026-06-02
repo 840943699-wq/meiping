@@ -263,7 +263,7 @@ async function analyze(imageBase64, apiKey, mode = 'analyze', imageBase64_2 = nu
         { role: 'user', content: userContent }
       ],
       // PK 评审用极低温度保证评分一致性，分析模式用低温保持稳定
-      temperature: mode === 'pk' ? 0 : 0.3,
+      temperature: (mode === 'pk' || mode === 'celebrity') ? 0 : 0.3,
       max_tokens: 4096
     })
   });

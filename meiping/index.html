@@ -1525,18 +1525,22 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* 排名勋章 */
-    .cel-medal {
+    /* 明星头像 */
+    .cel-avatar {
       width: 56px; height: 56px; border-radius: 50%;
-      flex-shrink: 0;
+      flex-shrink: 0; position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #F5F0E8, #E8DDD0);
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px; font-weight: 700; color: #fff;
-      letter-spacing: 1px;
     }
-    .cel-medal.gold   { background: linear-gradient(135deg, #E8C848, #C8963E); font-size: 24px; }
-    .cel-medal.silver { background: linear-gradient(135deg, #C0C0C0, #999); font-size: 22px; }
-    .cel-medal.bronze { background: linear-gradient(135deg, #D4A87C, #B8863E); font-size: 20px; }
-    .cel-medal.normal { background: linear-gradient(135deg, #E8E0D5, #C8BFA8); color: #8B7355; }
+    .cel-avatar img {
+      width: 100%; height: 100%; object-fit: cover;
+      position: absolute; inset: 0; z-index: 2;
+      transition: opacity 0.4s;
+    }
+    .cel-avatar .cel-av-fallback {
+      font-size: 18px; font-weight: 700; color: #8B7355;
+      z-index: 1;
+    }
 
     /* 匹配信息 */
     .cel-match-info {
@@ -2890,22 +2894,21 @@
       matchesEl.innerHTML = '';
 
       const matches = r.matches || [];
-      const medalClasses = ['gold', 'silver', 'bronze', 'normal', 'normal'];
       const rankMarks = ['🥇', '🥈', '🥉', '④', '⑤'];
 
       matches.forEach((m, i) => {
         const isTop = i === 0;
         const pct = m.percentage || Math.max(95 - i * 12, 50);
-        // 用明星名字第一个字做勋章
         const initial = m.name ? m.name.charAt(0) : '星';
-        const medalCls = medalClasses[i] || 'normal';
         const delay = `${i * 0.12}s`;
 
         const card = document.createElement('div');
         card.className = 'cel-match-card' + (isTop ? ' cel-top' : '');
         card.style.setProperty('--delay', delay);
         card.innerHTML = `
-          <div class="cel-medal ${medalCls}">${initial}</div>
+          <div class="cel-avatar" data-name="${encodeURIComponent(m.name)}">
+            <span class="cel-av-fallback">${initial}</span>
+          </div>
           <div class="cel-match-info">
             <div class="cel-match-top">
               <span class="cel-match-rank">${rankMarks[i]}</span>
@@ -2927,6 +2930,43 @@
           bar.style.width = pct + '%';
         });
       }, 200);
+
+      // 异步加载明星真人头像
+      loadCelebrityPhotos();
+    }
+
+    async function loadCelebrityPhotos() {
+      const avatars = document.querySelectorAll('.cel-avatar[data-name]');
+      for (const av of avatars) {
+        const name = decodeURIComponent(av.getAttribute('data-name'));
+        const img = document.createElement('img');
+        img.alt = name;
+        img.loading = 'lazy';
+        img.onload = () => {
+          // 图片加载成功，隐藏占位字
+          const fb = av.querySelector('.cel-av-fallback');
+          if (fb) fb.style.display = 'none';
+        };
+        img.onerror = () => { img.remove(); };
+        const url = await fetchCelebrityPhoto(name);
+        if (url) { img.src = url; av.appendChild(img); }
+      }
+    }
+
+    async function fetchCelebrityPhoto(name) {
+      // 尝试 Wikipedia 获取明星头像
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 5000);
+        const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}`;
+        const resp = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (!resp.ok) return null;
+        const data = await resp.json();
+        return data.thumbnail?.source || null;
+      } catch (e) {
+        return null;
+      }
     }
 
     // ── 结果渲染 ──────────────────────────────
