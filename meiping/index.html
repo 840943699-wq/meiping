@@ -2978,7 +2978,6 @@
     }
 
     async function fetchCelebrityPhoto(name) {
-      // 用 MediaWiki API（支持 CORS origin=*）
       const tryWiki = async (lang) => {
         try {
           const ctrl = new AbortController();
@@ -2986,20 +2985,19 @@
           const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(name)}&prop=pageimages&format=json&pithumbsize=200&origin=*`;
           const resp = await fetch(apiUrl, { signal: ctrl.signal });
           clearTimeout(timer);
-          if (!resp.ok) return null;
+          if (!resp.ok) { console.log(`Wiki ${lang}: HTTP ${resp.status}`); return null; }
           const data = await resp.json();
           const pages = data.query?.pages;
-          if (!pages) return null;
-          // 取第一个有效页面
+          if (!pages) { console.log(`Wiki ${lang}: no pages`); return null; }
           for (const pid of Object.keys(pages)) {
-            if (pid === '-1') continue; // 页面不存在
+            if (pid === '-1') { console.log(`Wiki ${lang}: page not found for "${name}"`); continue; }
             const thumb = pages[pid].thumbnail;
-            if (thumb?.source) return thumb.source;
+            if (thumb?.source) { console.log(`Wiki ${lang}: ✅ ${name} → ${thumb.source.slice(0,60)}...`); return thumb.source; }
+            console.log(`Wiki ${lang}: page found but no thumbnail for "${name}"`);
           }
           return null;
-        } catch (e) { return null; }
+        } catch (e) { console.log(`Wiki ${lang}: error - ${e.message}`); return null; }
       };
-      // 中 → 英 → 无
       return (await tryWiki('zh')) || (await tryWiki('en')) || null;
     }
 
