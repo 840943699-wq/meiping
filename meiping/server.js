@@ -354,63 +354,52 @@ async function handleAnalyze(req, res) {
   }
 }
 
-// ── 明星照片代理（批量版）──────────────────
+// ── 明星照片代理（百度图片版）──────────────────
 async function handleCelebrityPhoto(req, res, url) {
-  const namesParam = url.searchParams.get('names') || '';
-  if (!namesParam) {
+  const name = url.searchParams.get('name') || '';
+  if (!name) {
     res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: '缺少明星名字' }));
     return;
   }
 
-  const names = decodeURIComponent(namesParam).split(',').map(n => n.trim()).filter(Boolean);
+  try {
+    const searchUrl = `https://image.baidu.com/search/acjson?tn=resultjson_com&word=${encodeURIComponent(name + ' 写真')}&pn=0&rn=3&width=300&height=300`;
+    const resp = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://image.baidu.com/',
+        'Accept': 'application/json'
+      },
+      signal: AbortSignal.timeout(8000)
+    });
 
-  const getPageThumb = async (lang, title) => {
-    try {
-      const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=300&origin=*`;
-      const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(4000) });
-      if (!resp.ok) return null;
-      const data = await resp.json();
-      for (const pid of Object.keys(data.query?.pages || {})) {
-        if (pid === '-1') continue;
-        return data.query.pages[pid].thumbnail?.source || null;
-      }
-      return null;
-    } catch (e) { return null; }
-  };
+    if (!resp.ok) {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ url: null }));
+      return;
+    }
 
-  const searchPage = async (lang, query) => {
-    try {
-      const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&namespace=0&format=json&origin=*`;
-      const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(4000) });
-      if (!resp.ok) return null;
-      const data = await resp.json();
-      return (data[1] && data[1].length > 0) ? data[1][0] : null;
-    } catch (e) { return null; }
-  };
+    const text = await resp.text();
+    const jsonStr = text.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
+    const data = JSON.parse(jsonStr);
 
-  const findPhoto = async (name) => {
-    let src = await getPageThumb('zh', name);
-    if (src) return src;
-    src = await getPageThumb('en', name);
-    if (src) return src;
-    for (const lang of ['zh', 'en']) {
-      const found = await searchPage(lang, name);
-      if (found) {
-        src = await getPageThumb(lang, found);
-        if (src) return src;
+    const items = data?.data || [];
+    for (const item of items) {
+      const imgUrl = item?.thumbURL || item?.middleURL;
+      if (imgUrl && !imgUrl.includes('loading') && imgUrl.startsWith('http')) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ url: imgUrl }));
+        return;
       }
     }
-    return null;
-  };
 
-  const results = {};
-  for (const name of names) {
-    results[name] = await findPhoto(name);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ url: null }));
+  } catch (e) {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ url: null }));
   }
-
-  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify({ photos: results }));
 }
 
 // ── Supabase 代理 ──────────────────────────
