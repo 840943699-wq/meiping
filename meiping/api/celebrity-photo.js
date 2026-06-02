@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   const getPageThumb = async (lang, title) => {
     try {
       const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=300&origin=*`;
-      const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(5000) });
+      const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(3000) });
       if (!resp.ok) return null;
       const data = await resp.json();
       for (const pid of Object.keys(data.query?.pages || {})) {
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
   const searchPage = async (lang, query) => {
     try {
       const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&namespace=0&format=json&origin=*`;
-      const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(5000) });
+      const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(3000) });
       if (!resp.ok) return null;
       const data = await resp.json();
       if (data[1] && data[1].length > 0) return data[1][0];
