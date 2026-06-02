@@ -2955,6 +2955,30 @@
           bar.style.width = pct + '%';
         });
       }, 200);
+
+      // 异步加载明星真人头像
+      loadCelebrityPhotos(matches);
+    }
+
+    function loadCelebrityPhotos(matches) {
+      const avatars = document.querySelectorAll('.cel-avatar');
+      avatars.forEach((av, i) => {
+        const name = matches[i]?.name;
+        if (!name || !av) return;
+        // 直接调 Wikipedia 摘要 REST API
+        const tryFetch = (lang) =>
+          fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}?redirect=true`)
+            .then(r => r.ok ? r.json().then(d => d.thumbnail?.source || null) : null)
+            .catch(() => null);
+
+        tryFetch('zh').then(src => src || tryFetch('en')).then(src => {
+          if (!src) return;
+          const img = document.createElement('img');
+          img.src = src; img.referrerPolicy = 'no-referrer';
+          img.onload = () => { av.textContent = ''; av.appendChild(img); };
+          img.onerror = () => img.remove();
+        });
+      });
     }
 
     // ── 结果渲染 ──────────────────────────────
