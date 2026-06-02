@@ -252,36 +252,37 @@
        拍照页
        ============================================ */
     /* ============================================
-       明星脸专属拍照页 — 金色暖调
+       明星脸专属拍照页 — 暖调轻奢
        ============================================ */
     #page-celebrity-camera {
-      background: linear-gradient(180deg, #1E1B18 0%, #1A1815 100%);
+      background: linear-gradient(180deg, #FFFDF7 0%, #FEF9ED 40%, #FFF8E0 100%);
     }
     .celcam-topbar {
       display: flex; align-items: center; justify-content: space-between;
       padding: 12px 16px;
       padding-top: max(12px, env(safe-area-inset-top));
-      color: rgba(255,255,255,0.85); font-size: 15px; font-weight: 500;
-      z-index: 2;
+      color: #5C4A2E; font-size: 16px; font-weight: 600;
+      z-index: 2; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
     }
-    .celcam-back { cursor: pointer; opacity: 0.8; }
-    .celcam-title { font-weight: 600; }
+    .celcam-back { cursor: pointer; opacity: 0.7; font-weight: 500; }
+    .celcam-title { letter-spacing: 1px; }
 
     .celcam-preview-area {
       flex: 1; display: flex; align-items: center; justify-content: center;
-      padding: 16px 28px;
+      padding: 12px 28px;
     }
     .celcam-preview-card {
-      width: 100%; max-width: 300px; aspect-ratio: 3/4;
+      width: 100%; max-width: 280px; aspect-ratio: 3/4;
       border-radius: 20px; overflow: hidden;
-      background: rgba(255,255,255,0.03);
-      border: 1.5px solid rgba(212,168,67,0.3);
+      background: #fff;
+      border: 1.5px solid #E8DDC8;
+      box-shadow: 0 4px 24px rgba(180,140,60,0.08);
       position: relative;
       display: flex; align-items: center; justify-content: center;
-      transition: border-color 0.3s;
+      transition: border-color 0.3s, box-shadow 0.3s;
     }
     .celcam-preview-card.has-image {
-      border-color: rgba(212,168,67,0.6);
+      border-color: #D4B87A; box-shadow: 0 4px 24px rgba(180,140,60,0.15);
     }
     .celcam-preview-card img {
       width: 100%; height: 100%; object-fit: cover; display: none;
@@ -292,19 +293,20 @@
       text-align: center; padding: 24px;
     }
     .celcam-star-icon {
-      font-size: 52px; margin-bottom: 12px;
+      font-size: 48px; margin-bottom: 12px;
       animation: celStarPulse 2s ease-in-out infinite;
     }
     @keyframes celStarPulse {
-      0%, 100% { transform: scale(1); opacity: 0.7; }
-      50%      { transform: scale(1.08); opacity: 1; }
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50%      { transform: scale(1.06); opacity: 1; }
     }
     .celcam-ph-hint {
-      color: rgba(255,255,255,0.7); font-size: 16px;
-      margin: 0 0 4px 0; font-weight: 500;
+      color: #5C4A2E; font-size: 16px; font-weight: 600;
+      margin: 0 0 4px 0;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
     }
     .celcam-ph-sub {
-      color: rgba(255,255,255,0.3); font-size: 13px; margin: 0;
+      color: #B8A88A; font-size: 13px; margin: 0;
     }
     .celcam-preview-card.has-image .celcam-placeholder { display: none; }
     .celcam-video {
@@ -314,54 +316,52 @@
     .celcam-video.active { display: block; }
     .celcam-preview-card.has-video .celcam-placeholder { display: none; }
 
-    /* 中间大圆拍照按钮 */
+    /* 底部双按钮 */
     .celcam-controls {
       display: flex; align-items: center; justify-content: center;
-      padding: 8px 24px 4px; z-index: 2;
+      gap: 36px; padding: 12px 24px 8px; z-index: 2;
     }
-    .celcam-shutter {
-      width: 88px; height: 88px; border-radius: 50%;
-      background: none; border: none; cursor: pointer; padding: 0;
-      position: relative;
+    .celcam-ctrl-item {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      cursor: pointer; border: none; background: none; padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    }
+    .celcam-ctrl-circle {
+      width: 76px; height: 76px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      transition: transform 0.15s;
+      transition: transform 0.15s, box-shadow 0.15s;
     }
-    .celcam-shutter:active { transform: scale(0.9); }
-    .celcam-shutter::before {
-      content: '';
-      position: absolute; inset: -4px; border-radius: 50%;
-      background: linear-gradient(135deg, #E8C848, #C8963E);
-      opacity: 0.6;
-    }
-    .celcam-shutter-inner {
-      position: relative; z-index: 1;
-      width: 80px; height: 80px; border-radius: 50%;
-      background: radial-gradient(circle at 40% 35%, #2A2520, #1E1B17);
-      border: 2px solid rgba(212,168,67,0.4);
-      display: flex; align-items: center; justify-content: center;
-      color: #E8C848;
-    }
+    .celcam-ctrl-item:active .celcam-ctrl-circle { transform: scale(0.92); }
 
-    .celcam-album-link {
-      text-align: center; color: rgba(255,255,255,0.35);
-      font-size: 13px; cursor: pointer; padding: 8px;
-      z-index: 2;
-      transition: color 0.2s;
+    .celcam-ctrl-circle.cam {
+      background: linear-gradient(135deg, #FFF0C8, #F5E0A0);
+      box-shadow: 0 6px 28px rgba(180,130,40,0.2), 0 0 0 4px rgba(200,150,60,0.1);
+      color: #8B6914;
     }
-    .celcam-album-link:active { color: rgba(255,255,255,0.6); }
+    .celcam-ctrl-circle.album {
+      background: #F8F5F0; color: #8B7E6A;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      width: 64px; height: 64px;
+    }
+    .celcam-ctrl-label {
+      font-size: 12px; font-weight: 600; letter-spacing: 1px;
+      color: #8B7355;
+    }
 
     .celcam-btn-go {
       display: flex; align-items: center; justify-content: center;
-      width: calc(100% - 48px); max-width: 300px; height: 48px;
+      width: calc(100% - 48px); max-width: 300px; height: 50px;
       margin: 0 auto 24px;
       background: linear-gradient(135deg, #E8C848, #C8963E);
-      color: #1A1815; border: none; border-radius: 24px;
-      font-size: 16px; font-weight: 700; letter-spacing: 0.5px;
+      color: #fff; border: none; border-radius: 25px;
+      font-size: 16px; font-weight: 700; letter-spacing: 1px;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
       cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(200,150,60,0.25);
       opacity: 0.35; pointer-events: none;
     }
     .celcam-btn-go.ready { opacity: 1; pointer-events: auto; }
-    .celcam-btn-go.ready:active { transform: scale(0.96); }
+    .celcam-btn-go.ready:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(200,150,60,0.15); }
 
     /* ============================================
        通用拍照页
@@ -1962,17 +1962,27 @@
     <video id="celcam-video" class="celcam-video" autoplay playsinline></video>
     <canvas id="celcam-canvas" class="hidden-input"></canvas>
     <div class="celcam-controls">
-      <button class="celcam-shutter" id="celcam-shutter-btn" onclick="takeCelebrityPhoto()">
-        <div class="celcam-shutter-inner">
-          <svg width="36" height="36" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <button class="celcam-ctrl-item" id="celcam-shutter-btn" onclick="takeCelebrityPhoto()">
+        <div class="celcam-ctrl-circle cam">
+          <svg width="30" height="30" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <rect x="6" y="10" width="36" height="28" rx="4"/>
             <circle cx="24" cy="24" r="11"/>
             <circle cx="24" cy="24" r="4" fill="currentColor"/>
           </svg>
         </div>
+        <span class="celcam-ctrl-label">拍照</span>
+      </button>
+      <button class="celcam-ctrl-item" onclick="pickCelebrityAlbum()">
+        <div class="celcam-ctrl-circle album">
+          <svg width="26" height="26" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="10" width="36" height="28" rx="4"/>
+            <circle cx="17" cy="22" r="4"/>
+            <path d="M6 34l10-10 8 8 6-6 12 12"/>
+          </svg>
+        </div>
+        <span class="celcam-ctrl-label">相册</span>
       </button>
     </div>
-    <p class="celcam-album-link" onclick="pickCelebrityAlbum()">从相册选择</p>
     <button class="celcam-btn-go" id="celcam-btn-go" onclick="startCelebrityAnalysis()">
       ✨ 开始匹配
     </button>
@@ -2553,12 +2563,7 @@
     let celcamReady = false; // 摄像头已就绪，再点即拍照
 
     async function takeCelebrityPhoto() {
-      // 如果摄像头已开启 → 拍照
-      if (celcamReady) {
-        captureWebcamFrame();
-        return;
-      }
-      // 尝试打开网页摄像头
+      if (celcamReady) { captureWebcamFrame(); return; }
       try {
         celcamStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 960 } }
@@ -2568,13 +2573,10 @@
         video.classList.add('active');
         document.getElementById('celcam-preview').classList.add('has-video');
         celcamReady = true;
-        // 按钮变成"拍照"
-        const inner = document.querySelector('#celcam-shutter-btn .celcam-shutter-inner');
-        inner.innerHTML = '<span style="font-size:14px;font-weight:700">拍照</span>';
-        inner.style.background = 'radial-gradient(circle at 40% 35%, #E8C848, #C8963E)';
-        inner.style.color = '#1A1815';
+        // 按钮文字变"拍摄"
+        const label = document.querySelector('#celcam-shutter-btn .celcam-ctrl-label');
+        if (label) label.textContent = '拍摄';
       } catch (e) {
-        // 桌面摄像头不可用 → 用手机 capture
         document.getElementById('celcam-input-camera').click();
       }
     }
@@ -2587,13 +2589,11 @@
       canvas.getContext('2d').drawImage(video, 0, 0);
       const base64 = canvas.toDataURL('image/jpeg', 0.7);
       currentImage = { base64, file: null };
-      // 显示在预览区
       const img = document.getElementById('celcam-preview-img');
       img.src = base64;
       const preview = document.getElementById('celcam-preview');
       preview.classList.add('has-image');
       document.getElementById('celcam-btn-go').classList.add('ready');
-      // 关闭摄像头
       stopWebcam();
     }
 
@@ -2604,10 +2604,8 @@
       video.classList.remove('active');
       video.srcObject = null;
       document.getElementById('celcam-preview').classList.remove('has-video');
-      const inner = document.querySelector('#celcam-shutter-btn .celcam-shutter-inner');
-      inner.innerHTML = `<svg width="36" height="36" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="4"/><circle cx="24" cy="24" r="11"/><circle cx="24" cy="24" r="4" fill="currentColor"/></svg>`;
-      inner.style.background = 'radial-gradient(circle at 40% 35%, #2A2520, #1E1B17)';
-      inner.style.color = '#E8C848';
+      const label = document.querySelector('#celcam-shutter-btn .celcam-ctrl-label');
+      if (label) label.textContent = '拍照';
     }
 
     function pickCelebrityAlbum() { document.getElementById('celcam-input-album').click(); }
