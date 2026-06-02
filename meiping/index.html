@@ -2967,13 +2967,19 @@
         img.alt = name;
         img.loading = 'lazy';
         img.onload = () => {
-          // 图片加载成功，隐藏占位字
           const fb = av.querySelector('.cel-av-fallback');
           if (fb) fb.style.display = 'none';
         };
-        img.onerror = () => { img.remove(); };
+        img.onerror = () => { console.log('IMG load failed:', name); img.remove(); };
+        img.referrerPolicy = 'no-referrer';
         const url = await fetchCelebrityPhoto(name);
-        if (url) { img.src = url; av.appendChild(img); }
+        if (url) {
+          img.src = url;
+          av.appendChild(img);
+          console.log('📸 设置头像:', name, url.slice(0, 80));
+        } else {
+          console.log('❌ 未找到头像:', name);
+        }
       }
     }
 
