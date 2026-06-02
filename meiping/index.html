@@ -2978,23 +2978,29 @@
     }
 
     async function fetchCelebrityPhoto(name) {
-      // 依次尝试中文维基 → 英文维基 → 返回 null（显示首字）
-      const wikis = [
-        `https://zh.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}`,
-        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}`,
-      ];
-      for (const wikiUrl of wikis) {
+      // 用 MediaWiki API（支持 CORS origin=*）
+      const tryWiki = async (lang) => {
         try {
           const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 5000);
-          const resp = await fetch(wikiUrl, { signal: ctrl.signal });
+          const timer = setTimeout(() => ctrl.abort(), 6000);
+          const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(name)}&prop=pageimages&format=json&pithumbsize=200&origin=*`;
+          const resp = await fetch(apiUrl, { signal: ctrl.signal });
           clearTimeout(timer);
-          if (!resp.ok) continue;
+          if (!resp.ok) return null;
           const data = await resp.json();
-          if (data.thumbnail?.source) return data.thumbnail.source;
-        } catch (e) { continue; }
-      }
-      return null;
+          const pages = data.query?.pages;
+          if (!pages) return null;
+          // 取第一个有效页面
+          for (const pid of Object.keys(pages)) {
+            if (pid === '-1') continue; // 页面不存在
+            const thumb = pages[pid].thumbnail;
+            if (thumb?.source) return thumb.source;
+          }
+          return null;
+        } catch (e) { return null; }
+      };
+      // 中 → 英 → 无
+      return (await tryWiki('zh')) || (await tryWiki('en')) || null;
     }
 
     // ── 结果渲染 ──────────────────────────────
