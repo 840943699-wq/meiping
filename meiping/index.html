@@ -2295,10 +2295,28 @@
     }
 
     // ── 结果缓存（相同照片 → 相同结果）──────
+    // 缓存：内存 + sessionStorage 双层，同会话绝对一致
     const resultCache = {};
     function cacheKey(photos) {
-      // 取每张照片 base64 的前 200 字符做简易哈希
-      return photos.map(p => p.base64.slice(0, 200)).join('|');
+      // 用每张照片的完整 base64 中间 300 字符做指纹（足够区分不同照片）
+      const fingerprint = photos.map(p => {
+        const b64 = p.base64;
+        const mid = Math.floor(b64.length / 2);
+        return b64.slice(mid, mid + 300);
+      }).join('|');
+      return fingerprint;
+    }
+    function getCache(key) {
+      if (resultCache[key]) return resultCache[key];
+      try {
+        const stored = sessionStorage.getItem('mp_' + key);
+        if (stored) { resultCache[key] = JSON.parse(stored); return resultCache[key]; }
+      } catch(e) {}
+      return null;
+    }
+    function setCache(key, val) {
+      resultCache[key] = val;
+      try { sessionStorage.setItem('mp_' + key, JSON.stringify(val)); } catch(e) {}
     }
 
     // ── 页面导航 ──────────────────────────────
@@ -2480,11 +2498,14 @@
 
       // 检查缓存
       const key = appMode + '_' + cacheKey([currentImage]);
-      if (retryCount === 0 && resultCache[key]) {
-        analysisResult = resultCache[key];
-        if (appMode === 'celebrity') { renderCelebrityResults(); goToCelebrityResult(); }
-        else { renderResults(); goToResult(); }
-        return;
+      if (retryCount === 0) {
+        const cached = getCache(key);
+        if (cached) {
+          analysisResult = cached;
+          if (appMode === 'celebrity') { renderCelebrityResults(); goToCelebrityResult(); }
+          else { renderResults(); goToResult(); }
+          return;
+        }
       }
 
       try {
@@ -2492,7 +2513,7 @@
         advanceLoadingStep(2); await sleep(400);
         advanceLoadingStep(3);
         const result = await callZhipuAPI(currentImage.base64, null, appMode);
-        resultCache[key] = result;
+        setCache(key, result);
         advanceLoadingStep(4); await sleep(300);
         analysisResult = result;
         if (appMode === 'celebrity') { renderCelebrityResults(); goToCelebrityResult(); }
@@ -2614,11 +2635,14 @@
 
       // 检查缓存（相同照片直接返回上次结果，保证评分一致）
       const key = 'pk_' + cacheKey(activePhotos);
-      if (retryCount === 0 && resultCache[key]) {
-        analysisResult = resultCache[key];
-        renderPKResults(activePhotos);
-        goToPKResult();
-        return;
+      if (retryCount === 0) {
+        const cached = getCache(key);
+        if (cached) {
+          analysisResult = cached;
+          renderPKResults(activePhotos);
+          goToPKResult();
+          return;
+        }
       }
 
       try {
@@ -2627,7 +2651,7 @@
         const allBase64 = activePhotos.map(p => p.base64);
         const result = await callZhipuAPI(allBase64[0], allBase64.length > 1 ? allBase64[1] : null, 'pk', allBase64);
         // 缓存结果
-        resultCache[key] = result;
+        setCache(key, result);
         advanceLoadingStep(4); await sleep(200);
         analysisResult = result;
         renderPKResults(activePhotos);
@@ -2954,19 +2978,23 @@
     }
 
     async function fetchCelebrityPhoto(name) {
-      // 尝试 Wikipedia 获取明星头像
-      try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 5000);
-        const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}`;
-        const resp = await fetch(url, { signal: ctrl.signal });
-        clearTimeout(timer);
-        if (!resp.ok) return null;
-        const data = await resp.json();
-        return data.thumbnail?.source || null;
-      } catch (e) {
-        return null;
+      // 依次尝试中文维基 → 英文维基 → 返回 null（显示首字）
+      const wikis = [
+        `https://zh.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}`,
+        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}`,
+      ];
+      for (const wikiUrl of wikis) {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 5000);
+          const resp = await fetch(wikiUrl, { signal: ctrl.signal });
+          clearTimeout(timer);
+          if (!resp.ok) continue;
+          const data = await resp.json();
+          if (data.thumbnail?.source) return data.thumbnail.source;
+        } catch (e) { continue; }
       }
+      return null;
     }
 
     // ── 结果渲染 ──────────────────────────────
