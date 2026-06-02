@@ -406,89 +406,158 @@
     /* ============================================
        加载页
        ============================================ */
+    /* ============================================
+       加载页 — 高级重构
+       ============================================ */
     #page-loading {
-      background: #fff;
+      background: linear-gradient(180deg, #F8F9FC 0%, #F0F2F8 100%);
       justify-content: center;
       align-items: center;
+      overflow: hidden;
     }
+    /* 背景呼吸光晕 */
+    .loading-aura {
+      position: absolute; top: 50%; left: 50%;
+      width: 320px; height: 320px; margin: -160px 0 0 -160px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,47,167,0.06) 0%, rgba(77,124,254,0.03) 40%, transparent 70%);
+      animation: auraBreath 3s ease-in-out infinite;
+    }
+    @keyframes auraBreath {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50%      { transform: scale(1.2); opacity: 1; }
+    }
+
     .loading-container {
-      text-align: center;
-      padding: 40px;
+      text-align: center; padding: 40px; position: relative; z-index: 1;
     }
+
+    /* 中央环形区 */
     .loading-ring-wrap {
-      position: relative;
-      width: 120px;
-      height: 120px;
-      margin: 0 auto 36px;
+      position: relative; width: 160px; height: 160px; margin: 0 auto 40px;
     }
-    .loading-ring-svg {
-      width: 120px;
-      height: 120px;
-      transform: rotate(-90deg);
+    /* 外发光 */
+    .loading-glow {
+      position: absolute; inset: -20px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,47,167,0.08) 0%, transparent 70%);
+      animation: glowPulse 2.5s ease-in-out infinite;
     }
-    .loading-ring-bg {
-      fill: none;
-      stroke: #F0F0F5;
-      stroke-width: 4;
+    @keyframes glowPulse {
+      0%, 100% { transform: scale(0.9); opacity: 0.5; }
+      50%      { transform: scale(1.05); opacity: 1; }
     }
-    .loading-ring-fg {
-      fill: none;
-      stroke: url(#ringGradient);
-      stroke-width: 4;
+    /* 轨道 SVG */
+    .loading-orbit-svg {
+      width: 160px; height: 160px; transform: rotate(-90deg);
+      position: relative; z-index: 2;
+    }
+    .lo-track {
+      fill: none; stroke: #E8ECF4; stroke-width: 3;
+    }
+    .lo-progress {
+      fill: none; stroke: url(#ringGradient); stroke-width: 3;
       stroke-linecap: round;
-      stroke-dasharray: 283;
-      stroke-dashoffset: 283;
-      animation: spin-ring 2s linear infinite;
+      stroke-dasharray: 427;
+      stroke-dashoffset: 427;
+      transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .loading-icon {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
+    /* 内层扫描圈 */
+    .loading-scan-ring {
+      position: absolute; inset: 28px; border-radius: 50%; z-index: 3;
+      border: 1.5px solid rgba(0,47,167,0.12);
+      animation: scanSpin 4s linear infinite;
     }
+    .loading-scan-ring::after {
+      content: ''; position: absolute; top: -2px; left: 50%;
+      width: 6px; height: 6px; margin-left: -3px;
+      border-radius: 50%; background: var(--primary);
+      box-shadow: 0 0 12px rgba(0,47,167,0.6);
+    }
+    @keyframes scanSpin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    /* 中心 AI 图标 */
+    .loading-center {
+      position: absolute; inset: 0; z-index: 4;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .loading-center svg {
+      animation: aiPulse 2s ease-in-out infinite;
+    }
+    @keyframes aiPulse {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50%      { transform: scale(1.08); opacity: 1; }
+    }
+    /* 轨道粒子 */
+    .loading-particles { position: absolute; inset: 0; z-index: 5; }
+    .lp {
+      position: absolute; width: 5px; height: 5px; border-radius: 50%;
+      background: var(--primary);
+      animation: particleOrbit 3s linear infinite;
+    }
+    .lp1 { top: 8px; left: 50%; margin-left: -2.5px; animation-delay: 0s; opacity: 0.8; }
+    .lp2 { top: 50%; right: 8px; margin-top: -2.5px; animation-delay: 1s; opacity: 0.5; }
+    .lp3 { bottom: 8px; left: 50%; margin-left: -2.5px; animation-delay: 2s; opacity: 0.7; }
+    @keyframes particleOrbit {
+      0%   { transform: rotate(0deg) translateX(74px) rotate(0deg); }
+      100% { transform: rotate(360deg) translateX(74px) rotate(-360deg); }
+    }
+
+    /* 标题 */
     .loading-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 6px;
+      font-size: 22px; font-weight: 700; color: #1A1A2E;
+      margin-bottom: 6px; letter-spacing: 0.5px;
     }
     .loading-subtitle {
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-bottom: 28px;
+      font-size: 14px; color: #8E8EA0; margin-bottom: 32px;
     }
+
+    /* 步骤条 */
     .loading-steps {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-width: 240px;
-      margin: 0 auto;
+      display: flex; flex-direction: column; gap: 8px;
+      max-width: 280px; margin: 0 auto;
     }
     .loading-step {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 13px;
-      color: var(--text-tertiary);
-      transition: color 0.3s;
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-radius: 12px;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid transparent;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .loading-step .ldot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #E0E0E5;
-      flex-shrink: 0;
-      transition: all 0.3s;
+    .ls-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #E8ECF4; color: #999; font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.4s;
     }
-    .loading-step.done { color: #34C759; }
-    .loading-step.done .ldot { background: #34C759; }
-    .loading-step.current { color: var(--primary); font-weight: 500; }
-    .loading-step.current .ldot {
-      background: var(--primary);
-      box-shadow: 0 0 8px rgba(0,47,167,0.5);
-      animation: pulse-glow 1.5s ease-in-out infinite;
+    .ls-label {
+      font-size: 14px; color: #999; transition: color 0.4s;
+    }
+    /* 状态 */
+    .loading-step.done {
+      background: rgba(52,199,89,0.06); border-color: rgba(52,199,89,0.2);
+    }
+    .loading-step.done .ls-num {
+      background: #34C759; color: #fff;
+    }
+    .loading-step.done .ls-label { color: #34C759; }
+    .loading-step.done .ls-num::after {
+      content: '✓'; font-size: 13px;
+    }
+    .loading-step.done .ls-num span { display: none; }
+
+    .loading-step.current {
+      background: rgba(0,47,167,0.04); border-color: rgba(0,47,167,0.15);
+      box-shadow: 0 0 16px rgba(0,47,167,0.06);
+    }
+    .loading-step.current .ls-num {
+      background: var(--primary-gradient); color: #fff;
+      box-shadow: 0 2px 12px rgba(0,47,167,0.3);
+    }
+    .loading-step.current .ls-label {
+      color: var(--primary); font-weight: 600;
     }
 
     /* ============================================
@@ -1778,27 +1847,61 @@
 
   <!-- ========== 加载页 ========== -->
   <div class="page center" id="page-loading">
+    <!-- 背景呼吸光晕 -->
+    <div class="loading-aura"></div>
+
     <div class="loading-container">
+      <!-- 中央环形区 -->
       <div class="loading-ring-wrap">
-        <svg class="loading-ring-svg" viewBox="0 0 120 120">
-          <defs>
-            <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#002FA7"/>
-              <stop offset="100%" stop-color="#4D7CFE"/>
-            </linearGradient>
-          </defs>
-          <circle class="loading-ring-bg" cx="60" cy="60" r="45"/>
-          <circle class="loading-ring-fg" cx="60" cy="60" r="45"/>
+        <!-- 外层光晕 -->
+        <div class="loading-glow"></div>
+        <!-- 外层轨道 -->
+        <svg class="loading-orbit-svg" viewBox="0 0 160 160">
+          <circle class="lo-track" cx="80" cy="80" r="68"/>
+          <circle class="lo-progress" id="lo-progress" cx="80" cy="80" r="68"/>
         </svg>
-        <div class="loading-icon">💎</div>
+        <!-- 内层扫描圈 -->
+        <div class="loading-scan-ring"></div>
+        <!-- 中心 AI 标识 -->
+        <div class="loading-center">
+          <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="20" stroke="url(#ringGradient)" stroke-width="2.5"/>
+            <circle cx="24" cy="16" r="3" fill="url(#ringGradient)"/>
+            <path d="M24 19 L24 30" stroke="url(#ringGradient)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M18 30 L30 30" stroke="url(#ringGradient)" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="24" cy="24" r="20" stroke="url(#ringGradient)" stroke-width="0.5" stroke-dasharray="3 5" opacity="0.4"/>
+          </svg>
+        </div>
+        <!-- 粒子轨道 -->
+        <div class="loading-particles">
+          <span class="lp lp1"></span>
+          <span class="lp lp2"></span>
+          <span class="lp lp3"></span>
+        </div>
       </div>
+
+      <!-- 文案 -->
       <h2 class="loading-title" id="loading-title">AI 正在分析中…</h2>
-      <p class="loading-subtitle" id="loading-subtitle">请稍候，这可能需要几秒钟</p>
+      <p class="loading-subtitle" id="loading-subtitle">请稍候，马上就好</p>
+
+      <!-- 步骤条 -->
       <div class="loading-steps">
-        <div class="loading-step current" id="step-1"><span class="ldot"></span>识别面部特征</div>
-        <div class="loading-step" id="step-2"><span class="ldot"></span>分析五官比例</div>
-        <div class="loading-step" id="step-3"><span class="ldot"></span>评估整体气质</div>
-        <div class="loading-step" id="step-4"><span class="ldot"></span>生成变美建议</div>
+        <div class="loading-step current" id="step-1">
+          <span class="ls-num">01</span>
+          <span class="ls-label">识别面部特征</span>
+        </div>
+        <div class="loading-step" id="step-2">
+          <span class="ls-num">02</span>
+          <span class="ls-label">分析五官比例</span>
+        </div>
+        <div class="loading-step" id="step-3">
+          <span class="ls-num">03</span>
+          <span class="ls-label">评估整体气质</span>
+        </div>
+        <div class="loading-step" id="step-4">
+          <span class="ls-num">04</span>
+          <span class="ls-label">生成变美建议</span>
+        </div>
       </div>
     </div>
   </div>
@@ -2224,23 +2327,28 @@
     function goToLoading() {
       const title = document.getElementById('loading-title');
       const subtitle = document.getElementById('loading-subtitle');
+      // 重置步骤为默认
+      document.getElementById('step-1').querySelector('.ls-label').textContent = '识别面部特征';
+      document.getElementById('step-2').querySelector('.ls-label').textContent = '分析五官比例';
+      document.getElementById('step-3').querySelector('.ls-label').textContent = '评估整体气质';
+      document.getElementById('step-4').querySelector('.ls-label').textContent = '生成变美建议';
       if (appMode === 'pk') {
         title.textContent = 'AI 正在裁决中…';
         subtitle.textContent = '请稍候，正在对比多人颜值';
-        document.getElementById('step-1').lastChild.textContent = '分析多人面部特征';
-        document.getElementById('step-2').lastChild.textContent = '逐人评分对比';
-        document.getElementById('step-3').lastChild.textContent = '综合排名裁决';
-        document.getElementById('step-4').lastChild.textContent = '生成对比报告';
+        document.getElementById('step-1').querySelector('.ls-label').textContent = '分析多人面部特征';
+        document.getElementById('step-2').querySelector('.ls-label').textContent = '逐人评分对比';
+        document.getElementById('step-3').querySelector('.ls-label').textContent = '综合排名裁决';
+        document.getElementById('step-4').querySelector('.ls-label').textContent = '生成对比报告';
       } else if (appMode === 'celebrity') {
         title.textContent = '正在匹配明星脸…';
         subtitle.textContent = '请稍候，AI 正在扫描你的面部特征';
-        document.getElementById('step-1').lastChild.textContent = '提取面部关键特征';
-        document.getElementById('step-2').lastChild.textContent = '匹配明星数据库';
-        document.getElementById('step-3').lastChild.textContent = '计算相似度排名';
-        document.getElementById('step-4').lastChild.textContent = '生成匹配报告';
+        document.getElementById('step-1').querySelector('.ls-label').textContent = '提取面部关键特征';
+        document.getElementById('step-2').querySelector('.ls-label').textContent = '匹配明星数据库';
+        document.getElementById('step-3').querySelector('.ls-label').textContent = '计算相似度排名';
+        document.getElementById('step-4').querySelector('.ls-label').textContent = '生成匹配报告';
       } else {
         title.textContent = 'AI 正在分析中…';
-        subtitle.textContent = '请稍候，这可能需要几秒钟';
+        subtitle.textContent = '请稍候，马上就好';
       }
       showPage('page-loading');
       resetLoadingSteps();
