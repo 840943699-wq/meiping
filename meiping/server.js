@@ -354,7 +354,7 @@ async function handleAnalyze(req, res) {
   }
 }
 
-// ── 明星照片代理（百度图片版）──────────────────
+// ── 明星照片代理（Wikidata 版）──────────────────
 async function handleCelebrityPhoto(req, res, url) {
   const name = url.searchParams.get('name') || '';
   if (!name) {
@@ -363,42 +363,39 @@ async function handleCelebrityPhoto(req, res, url) {
     return;
   }
 
+  const sendNull = () => {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ url: null }));
+  };
+
   try {
-    const searchUrl = `https://image.baidu.com/search/acjson?tn=resultjson_com&word=${encodeURIComponent(name + ' 写真')}&pn=0&rn=3&width=300&height=300`;
-    const resp = await fetch(searchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer': 'https://image.baidu.com/',
-        'Accept': 'application/json'
-      },
-      signal: AbortSignal.timeout(8000)
-    });
+    // 搜索 Wikidata
+    const searchUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=zh&format=json&origin=*`;
+    const searchResp = await fetch(searchUrl, { signal: AbortSignal.timeout(5000) });
+    if (!searchResp.ok) return sendNull();
+    const searchData = await searchResp.json();
+    const results = searchData?.search || [];
+    if (results.length === 0) return sendNull();
 
-    if (!resp.ok) {
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ url: null }));
-      return;
-    }
+    // 获取图片声明
+    const qid = results[0].id;
+    const claimsUrl = `https://www.wikidata.org/w/api.php?action=wbgetclaims&property=P18&entity=${qid}&format=json&origin=*`;
+    const claimsResp = await fetch(claimsUrl, { signal: AbortSignal.timeout(5000) });
+    if (!claimsResp.ok) return sendNull();
+    const claimsData = await claimsResp.json();
+    const p18Claims = claimsData?.claims?.P18 || [];
+    if (p18Claims.length === 0) return sendNull();
 
-    const text = await resp.text();
-    const jsonStr = text.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
-    const data = JSON.parse(jsonStr);
+    const filename = p18Claims[0]?.mainsnak?.datavalue?.value;
+    if (!filename) return sendNull();
 
-    const items = data?.data || [];
-    for (const item of items) {
-      const imgUrl = item?.thumbURL || item?.middleURL;
-      if (imgUrl && !imgUrl.includes('loading') && imgUrl.startsWith('http')) {
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ url: imgUrl }));
-        return;
-      }
-    }
+    const encodedFilename = encodeURIComponent(filename.replace(/ /g, '_'));
+    const imageUrl = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodedFilename}?width=300`;
 
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ url: null }));
+    res.end(JSON.stringify({ url: imageUrl }));
   } catch (e) {
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ url: null }));
+    sendNull();
   }
 }
 

@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(node --check /Volumes/5/zhaopiandafen/meiping/api/celebrity-photo.js)",
-      "Bash(node --check /Volumes/5/zhaopiandafen/meiping/server.js)"
+      "Bash(node --check /Volumes/5/zhaopiandafen/meiping/server.js)",
+      "WebSearch"
     ]
   }
 }

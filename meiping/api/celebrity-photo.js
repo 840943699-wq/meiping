@@ -1,6 +1,7 @@
 /**
- * 美评 — 明星照片代理（百度图片版）
- * 从百度图片搜索获取明星头像
+ * 美评 — 明星照片代理（Wikidata 版）
+ * 服务端调用 Wikidata API 获取明星头像
+ * 流程：搜索明星 → 获取 Q-ID → 获取 P18 图片 → 返回 Commons URL
  */
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,34 +14,41 @@ export default async function handler(req, res) {
   if (!name) return res.status(400).json({ error: '缺少明星名字' });
 
   try {
-    // 百度图片搜索 JSON 接口
-    const searchUrl = `https://image.baidu.com/search/acjson?tn=resultjson_com&word=${encodeURIComponent(name + ' 写真')}&pn=0&rn=3&width=300&height=300`;
-    const resp = await fetch(searchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer': 'https://image.baidu.com/',
-        'Accept': 'application/json'
-      },
-      signal: AbortSignal.timeout(8000)
-    });
+    // 第1步：搜索 Wikidata 获取实体 ID
+    const searchUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=zh&format=json&origin=*`;
+    const searchResp = await fetch(searchUrl, { signal: AbortSignal.timeout(5000) });
+    if (!searchResp.ok) return sendNull(res);
 
-    if (!resp.ok) return res.status(200).json({ url: null });
+    const searchData = await searchResp.json();
+    const results = searchData?.search || [];
+    if (results.length === 0) return sendNull(res);
 
-    const text = await resp.text();
-    // 百度返回的 JSON 可能有前缀回调，先清洗
-    const jsonStr = text.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
-    const data = JSON.parse(jsonStr);
+    // 取第一个搜索结果
+    const qid = results[0].id; // 如 Q242641
 
-    // 提取第一张有效图片
-    const items = data?.data || [];
-    for (const item of items) {
-      const url = item?.thumbURL || item?.middleURL;
-      if (url && !url.includes('loading') && url.startsWith('http')) {
-        return res.status(200).json({ url });
-      }
-    }
-    return res.status(200).json({ url: null });
+    // 第2步：获取实体 P18（图片）声明
+    const claimsUrl = `https://www.wikidata.org/w/api.php?action=wbgetclaims&property=P18&entity=${qid}&format=json&origin=*`;
+    const claimsResp = await fetch(claimsUrl, { signal: AbortSignal.timeout(5000) });
+    if (!claimsResp.ok) return sendNull(res);
+
+    const claimsData = await claimsResp.json();
+    const p18Claims = claimsData?.claims?.P18 || [];
+    if (p18Claims.length === 0) return sendNull(res);
+
+    // 获取图片文件名
+    const filename = p18Claims[0]?.mainsnak?.datavalue?.value;
+    if (!filename) return sendNull(res);
+
+    // 构造 Commons 图片 URL（300px 宽度缩略图）
+    const encodedFilename = encodeURIComponent(filename.replace(/ /g, '_'));
+    const imageUrl = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodedFilename}?width=300`;
+
+    return res.status(200).json({ url: imageUrl });
   } catch (e) {
+    return sendNull(res);
+  }
+
+  function sendNull(res) {
     return res.status(200).json({ url: null });
   }
 }
