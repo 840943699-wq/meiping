@@ -2970,41 +2970,61 @@
           const fb = av.querySelector('.cel-av-fallback');
           if (fb) fb.style.display = 'none';
         };
-        img.onerror = () => { console.log('IMG load failed:', name); img.remove(); };
+        img.onerror = () => { img.remove(); };
         img.referrerPolicy = 'no-referrer';
         const url = await fetchCelebrityPhoto(name);
-        if (url) {
-          img.src = url;
-          av.appendChild(img);
-          console.log('📸 设置头像:', name, url.slice(0, 80));
-        } else {
-          console.log('❌ 未找到头像:', name);
-        }
+        if (url) { img.src = url; av.appendChild(img); }
       }
     }
 
     async function fetchCelebrityPhoto(name) {
-      const tryWiki = async (lang) => {
+      // 获取指定标题页面的缩略图
+      const getPageThumb = async (lang, title) => {
         try {
           const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 6000);
-          const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(name)}&prop=pageimages&format=json&pithumbsize=200&origin=*`;
+          const timer = setTimeout(() => ctrl.abort(), 5000);
+          const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=240&origin=*`;
           const resp = await fetch(apiUrl, { signal: ctrl.signal });
           clearTimeout(timer);
-          if (!resp.ok) { console.log(`Wiki ${lang}: HTTP ${resp.status}`); return null; }
+          if (!resp.ok) return null;
           const data = await resp.json();
-          const pages = data.query?.pages;
-          if (!pages) { console.log(`Wiki ${lang}: no pages`); return null; }
-          for (const pid of Object.keys(pages)) {
-            if (pid === '-1') { console.log(`Wiki ${lang}: page not found for "${name}"`); continue; }
-            const thumb = pages[pid].thumbnail;
-            if (thumb?.source) { console.log(`Wiki ${lang}: ✅ ${name} → ${thumb.source.slice(0,60)}...`); return thumb.source; }
-            console.log(`Wiki ${lang}: page found but no thumbnail for "${name}"`);
+          for (const pid of Object.keys(data.query?.pages || {})) {
+            if (pid === '-1') continue;
+            const src = data.query.pages[pid].thumbnail?.source;
+            if (src) return src;
           }
           return null;
-        } catch (e) { console.log(`Wiki ${lang}: error - ${e.message}`); return null; }
+        } catch (e) { return null; }
       };
-      return (await tryWiki('zh')) || (await tryWiki('en')) || null;
+      // 搜索维基页面（找不到直接匹配时兜底）
+      const searchPage = async (lang, query) => {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 5000);
+          const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&namespace=0&format=json&origin=*`;
+          const resp = await fetch(apiUrl, { signal: ctrl.signal });
+          clearTimeout(timer);
+          if (!resp.ok) return null;
+          const data = await resp.json();
+          // opensearch 格式: [query, [titles], [descriptions], [urls]]
+          if (data[1] && data[1].length > 0) return data[1][0];
+          return null;
+        } catch (e) { return null; }
+      };
+      // 先直接查中文 → 英文
+      let src = await getPageThumb('zh', name);
+      if (src) return src;
+      src = await getPageThumb('en', name);
+      if (src) return src;
+      // 搜不到就搜索一下再查
+      for (const lang of ['zh', 'en']) {
+        const found = await searchPage(lang, name);
+        if (found) {
+          src = await getPageThumb(lang, found);
+          if (src) return src;
+        }
+      }
+      return null;
     }
 
     // ── 结果渲染 ──────────────────────────────
