@@ -354,25 +354,26 @@ async function handleAnalyze(req, res) {
   }
 }
 
-// ── 明星照片代理 ──────────────────────────
+// ── 明星照片代理（批量版）──────────────────
 async function handleCelebrityPhoto(req, res, url) {
-  const name = url.searchParams.get('name') || '';
-  if (!name) {
+  const namesParam = url.searchParams.get('names') || '';
+  if (!namesParam) {
     res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: '缺少明星名字' }));
     return;
   }
 
+  const names = namesParam.split(',').map(n => decodeURIComponent(n.trim())).filter(Boolean);
+
   const getPageThumb = async (lang, title) => {
     try {
       const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=300&origin=*`;
-      const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(3000) });
+      const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(4000) });
       if (!resp.ok) return null;
       const data = await resp.json();
       for (const pid of Object.keys(data.query?.pages || {})) {
         if (pid === '-1') continue;
-        const src = data.query.pages[pid].thumbnail?.source;
-        if (src) return src;
+        return data.query.pages[pid].thumbnail?.source || null;
       }
       return null;
     } catch (e) { return null; }
@@ -381,37 +382,35 @@ async function handleCelebrityPhoto(req, res, url) {
   const searchPage = async (lang, query) => {
     try {
       const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&namespace=0&format=json&origin=*`;
-      const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(3000) });
+      const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(4000) });
       if (!resp.ok) return null;
       const data = await resp.json();
-      if (data[1] && data[1].length > 0) return data[1][0];
-      return null;
+      return (data[1] && data[1].length > 0) ? data[1][0] : null;
     } catch (e) { return null; }
   };
 
-  try {
+  const findPhoto = async (name) => {
     let src = await getPageThumb('zh', name);
-    if (src) return respondPhotoUrl(res, src);
-
+    if (src) return src;
     src = await getPageThumb('en', name);
-    if (src) return respondPhotoUrl(res, src);
-
+    if (src) return src;
     for (const lang of ['zh', 'en']) {
       const found = await searchPage(lang, name);
       if (found) {
         src = await getPageThumb(lang, found);
-        if (src) return respondPhotoUrl(res, src);
+        if (src) return src;
       }
     }
-    return respondPhotoUrl(res, null);
-  } catch (e) {
-    return respondPhotoUrl(res, null);
+    return null;
+  };
+
+  const results = {};
+  for (const name of names) {
+    results[name] = await findPhoto(name);
   }
 
-  function respondPhotoUrl(res, url) {
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ url: url || null }));
-  }
+  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.end(JSON.stringify({ photos: results }));
 }
 
 // ── Supabase 代理 ──────────────────────────
