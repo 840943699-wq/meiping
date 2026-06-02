@@ -1386,6 +1386,140 @@
     }
 
     /* ============================================
+       明星脸结果页
+       ============================================ */
+    #page-celebrity-result {
+      background: linear-gradient(180deg, #FFFDF7 0%, #FFF8EB 30%, #FFFDF9 100%);
+    }
+    .celebrity-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      background: rgba(255,253,247,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .celebrity-content {
+      padding: 0 0 40px 0; overflow-y: auto;
+    }
+
+    /* 用户照片区 */
+    .cel-photo-area {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px 0 8px;
+    }
+    .cel-photo-area img {
+      width: 110px; height: 110px; object-fit: cover;
+      border-radius: 50%; border: 3px solid #E8D5A3;
+      box-shadow: 0 4px 20px rgba(180,140,60,0.2);
+    }
+    .cel-photo-label {
+      margin-top: 8px; font-size: 13px; color: #999;
+    }
+
+    /* AI 综合点评 */
+    .cel-overall {
+      margin: 16px 20px 24px; padding: 18px 20px;
+      background: linear-gradient(135deg, #FFFBF0, #FFF8E8);
+      border-radius: 16px; border: 1px solid #F0E0C0;
+      font-size: 15px; line-height: 1.7; color: #5C4A2E;
+      text-align: center;
+    }
+
+    /* 匹配结果列表 */
+    .cel-matches {
+      padding: 0 20px;
+    }
+    .cel-match-card {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px; margin-bottom: 12px;
+      background: #FFFEFB; border-radius: 20px;
+      border: 1.5px solid #F0E5D0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      position: relative; overflow: hidden;
+      animation: celCardIn 0.5s var(--delay, 0s) cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    }
+    .cel-match-card.cel-top {
+      border-color: #D4A843; border-width: 2px;
+      box-shadow: 0 4px 24px rgba(180,140,60,0.18), 0 0 0 4px rgba(212,168,67,0.06);
+      background: linear-gradient(135deg, #FFFEF9, #FFF8E0);
+    }
+    .cel-match-card.cel-top::after {
+      content: '最像'; position: absolute; top: 10px; right: 10px;
+      background: linear-gradient(135deg, #D4A843, #C8963E);
+      color: #fff; font-size: 11px; font-weight: 600;
+      padding: 3px 10px; border-radius: 20px;
+    }
+    @keyframes celCardIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 卡通头像 */
+    .cel-avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg, #FFF3CD, #FFE69C);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .cel-avatar img {
+      width: 100%; height: 100%;
+    }
+
+    /* 匹配信息 */
+    .cel-match-info {
+      flex: 1; min-width: 0;
+    }
+    .cel-match-top {
+      display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px;
+    }
+    .cel-match-rank {
+      font-size: 13px; font-weight: 700; color: #C8963E;
+      font-style: italic;
+    }
+    .cel-match-name {
+      font-size: 17px; font-weight: 700; color: #2C2416;
+    }
+    .cel-match-pct {
+      font-size: 20px; font-weight: 800;
+      background: linear-gradient(135deg, #D4A843, #C8963E);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .cel-match-reason {
+      font-size: 13px; color: #888; line-height: 1.5;
+    }
+    /* 相似度进度条 */
+    .cel-pct-bar-wrap {
+      margin-top: 6px; height: 4px; background: #F0E8D5;
+      border-radius: 2px; overflow: hidden;
+    }
+    .cel-pct-bar {
+      height: 100%; border-radius: 2px;
+      background: linear-gradient(90deg, #D4A843, #E8C868);
+      transition: width 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    /* 按钮区 */
+    .cel-actions {
+      padding: 24px 20px 0; text-align: center;
+    }
+    .cel-btn-retry {
+      padding: 14px 40px;
+      font-size: 16px; font-weight: 600;
+      background: linear-gradient(135deg, #D4A843, #C8963E);
+      color: #fff; border: none; border-radius: 26px;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(200,150,60,0.3);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .cel-btn-retry:active {
+      transform: scale(0.96); box-shadow: 0 2px 8px rgba(200,150,60,0.2);
+    }
+
+    /* ============================================
        个人中心
        ============================================ */
     #page-profile {
@@ -1858,6 +1992,30 @@
     </div>
   </div>
 
+  <!-- ========== 🎭 明星脸结果页 ========== -->
+  <div class="page" id="page-celebrity-result">
+    <div class="celebrity-topbar">
+      <span class="result-back" onclick="goToMenu()">← 返回</span>
+      <span class="result-title">🌟 明星脸匹配</span>
+      <span style="width:48px"></span>
+    </div>
+    <div class="celebrity-content">
+      <!-- 上传的照片 -->
+      <div class="cel-photo-area">
+        <img id="cel-photo" src="" alt="你的照片" />
+        <div class="cel-photo-label">你的照片</div>
+      </div>
+      <!-- AI 综合点评 -->
+      <div class="cel-overall" id="cel-overall"></div>
+      <!-- 匹配结果卡片列表 -->
+      <div class="cel-matches" id="cel-matches"></div>
+      <!-- 操作按钮 -->
+      <div class="cel-actions">
+        <button class="cel-btn-retry" onclick="startCelebrity()">🔄 换张照片试试</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ========== SVG 渐变定义（全局） ========== -->
   <svg width="0" height="0" style="position:absolute">
     <defs>
@@ -2058,8 +2216,6 @@
       showPage('page-menu');
     }
     function goToCamera() {
-      // 更新顶栏文字
-      updateCameraTopbar();
       showPage('page-camera');
       currentImage = null;
       resetCameraUI();
@@ -2076,7 +2232,11 @@
         document.getElementById('step-4').lastChild.textContent = '生成对比报告';
       } else if (appMode === 'celebrity') {
         title.textContent = '正在匹配明星脸…';
-        subtitle.textContent = '请稍候，这可能需要几秒钟';
+        subtitle.textContent = '请稍候，AI 正在扫描你的面部特征';
+        document.getElementById('step-1').lastChild.textContent = '提取面部关键特征';
+        document.getElementById('step-2').lastChild.textContent = '匹配明星数据库';
+        document.getElementById('step-3').lastChild.textContent = '计算相似度排名';
+        document.getElementById('step-4').lastChild.textContent = '生成匹配报告';
       } else {
         title.textContent = 'AI 正在分析中…';
         subtitle.textContent = '请稍候，这可能需要几秒钟';
@@ -2085,6 +2245,7 @@
       resetLoadingSteps();
     }
     function goToResult() { showPage('page-result'); }
+    function goToCelebrityResult() { showPage('page-celebrity-result'); }
 
     // ── 主菜单功能入口 ──────────────────────
     function startAnalyze() {
@@ -2093,8 +2254,10 @@
       goToCamera();
     }
     function startCelebrity() {
-      showToast('✨ 明星脸功能即将上线，敬请期待');
-      // appMode = 'celebrity'; goToCamera();
+      appMode = 'celebrity';
+      pkPhotos = [null, null, null, null];
+      currentImage = null;
+      goToCamera();
     }
     function startPK() {
       appMode = 'pk';
@@ -2203,11 +2366,11 @@
       if (retryCount === 0) goToLoading();
 
       // 检查缓存
-      const key = 'an_' + cacheKey([currentImage]);
+      const key = appMode + '_' + cacheKey([currentImage]);
       if (retryCount === 0 && resultCache[key]) {
         analysisResult = resultCache[key];
-        renderResults();
-        goToResult();
+        if (appMode === 'celebrity') { renderCelebrityResults(); goToCelebrityResult(); }
+        else { renderResults(); goToResult(); }
         return;
       }
 
@@ -2219,8 +2382,8 @@
         resultCache[key] = result;
         advanceLoadingStep(4); await sleep(300);
         analysisResult = result;
-        renderResults();
-        goToResult();
+        if (appMode === 'celebrity') { renderCelebrityResults(); goToCelebrityResult(); }
+        else { renderResults(); goToResult(); }
       } catch (err) {
         console.error('分析失败:', err.message);
         const isRateLimit = err.message.includes('访问量大') || err.message.includes('限流') ||
@@ -2593,6 +2756,69 @@
       }
 
       return response.json();
+    }
+
+    // ── 明星脸结果渲染 ──────────────────────────
+    function renderCelebrityResults() {
+      if (!analysisResult) return;
+      const r = analysisResult;
+
+      // 设置用户照片
+      const photoEl = document.getElementById('cel-photo');
+      if (photoEl && currentImage) {
+        photoEl.src = currentImage.base64;
+      }
+
+      // AI 综合点评
+      const overallEl = document.getElementById('cel-overall');
+      if (overallEl) {
+        overallEl.innerHTML = `<p style="margin:0">💬 ${r.overall_comment || '你的面部特征独具特色，有属于自己的独特魅力！'}</p>`;
+      }
+
+      // 匹配结果卡片
+      const matchesEl = document.getElementById('cel-matches');
+      if (!matchesEl) return;
+      matchesEl.innerHTML = '';
+
+      const matches = r.matches || [];
+      const medals = ['🥇', '🥈', '🥉', '4', '5'];
+      const rankLabels = ['最像', '很像', '有点像', '略像', '微像'];
+
+      matches.forEach((m, i) => {
+        const isTop = i === 0;
+        const pct = m.percentage || Math.max(95 - i * 12, 50);
+        // 用 DiceBear 生成卡通头像（种子 = 明星名字）
+        const avatarUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(m.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+        const delay = `${i * 0.12}s`;
+
+        const card = document.createElement('div');
+        card.className = 'cel-match-card' + (isTop ? ' cel-top' : '');
+        card.style.setProperty('--delay', delay);
+        card.innerHTML = `
+          <div class="cel-avatar">
+            <img src="${avatarUrl}" alt="${m.name}" loading="lazy" />
+          </div>
+          <div class="cel-match-info">
+            <div class="cel-match-top">
+              <span class="cel-match-rank">${medals[i]}</span>
+              <span class="cel-match-name">${m.name}</span>
+              <span class="cel-match-pct">${pct}%</span>
+            </div>
+            <div class="cel-match-reason">${m.reason || '面部特征有相似之处'}</div>
+            <div class="cel-pct-bar-wrap">
+              <div class="cel-pct-bar" style="width:0;transition-delay:${0.3 + i * 0.12}s"></div>
+            </div>
+          </div>`;
+        matchesEl.appendChild(card);
+      });
+
+      // 延迟触发进度条动画
+      setTimeout(() => {
+        matchesEl.querySelectorAll('.cel-pct-bar').forEach((bar, i) => {
+          const pct = matches[i]?.percentage || Math.max(95 - i * 12, 50);
+          bar.style.width = pct + '%';
+        });
+      }, 200);
     }
 
     // ── 结果渲染 ──────────────────────────────
