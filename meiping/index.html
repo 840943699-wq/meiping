@@ -1,0 +1,2824 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>美评 - AI颜值评测</title>
+
+  <!-- PWA Meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="美评">
+  <meta name="theme-color" content="#002FA7">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
+
+  <style>
+    /* ============================================
+       美评 v2 — 美颜相机风格设计系统
+       ============================================ */
+
+    /* 自定义字体：造字工房元气泡泡体 */
+    @font-face {
+      font-family: 'YuanQiPaoPao';
+      src: url('fonts/MFYuanQiPaoPao.otf') format('opentype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      /* 主色 */
+      --primary: #002FA7;
+      --primary-light: #4D7CFE;
+      --primary-gradient: linear-gradient(135deg, #002FA7 0%, #4D7CFE 100%);
+      --primary-glow: 0 0 28px rgba(0, 47, 167, 0.25);
+
+      /* 背景 */
+      --bg: #F2F5FA;
+      --bg-gradient: linear-gradient(180deg, #EDF1FB 0%, #FFFFFF 100%);
+      --card: #FFFFFF;
+
+      /* 毛玻璃 */
+      --glass-bg: rgba(255, 255, 255, 0.72);
+      --glass-border: rgba(255, 255, 255, 0.6);
+
+      /* 文字 */
+      --text: #1C1C2E;
+      --text-secondary: #8E8E9A;
+      --text-tertiary: #B0B0BA;
+
+      /* 阴影 */
+      --shadow-xs: 0 1px 4px rgba(0,0,0,0.04);
+      --shadow-sm: 0 2px 12px rgba(0,0,0,0.06);
+      --shadow-md: 0 8px 28px rgba(0,0,0,0.10);
+      --shadow-lg: 0 16px 48px rgba(0,0,0,0.12);
+
+      /* 圆角 */
+      --r-sm: 10px;
+      --r-md: 16px;
+      --r-lg: 22px;
+      --r-xl: 28px;
+      --r-full: 9999px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "SF Pro Display", "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* ============================================
+       页面容器
+       ============================================ */
+    .page {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .page.active {
+      display: flex;
+      animation: fadeIn 0.3s ease-out;
+    }
+    .page.center {
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* ============================================
+       动画
+       ============================================ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,47,167,0.3); }
+      50%      { box-shadow: 0 0 0 16px rgba(0,47,167,0); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+    @keyframes spin-ring {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    @keyframes draw-circle {
+      from { stroke-dashoffset: 283; }
+      to   { stroke-dashoffset: 0; }
+    }
+    @keyframes countUp {
+      from { opacity: 0; transform: scale(0.6); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .anim-fadeup { animation: fadeUp 0.5s ease-out both; }
+
+    /* ============================================
+       首页
+       ============================================ */
+    #page-home {
+      background: linear-gradient(180deg, rgba(0,47,167,0.18) 0%, #E8DED3 32%, #FFFFFF 100%);
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 40px 28px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    /* 背景装饰 — 呼应顶部蓝色渐变 */
+    .home-bg-deco {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .home-deco-1 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(0,47,167,0.06) 0%, transparent 65%);
+      top: -90px; right: -60px;
+    }
+    .home-deco-2 {
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(77,124,254,0.05) 0%, transparent 60%);
+      bottom: 30%; left: -70px;
+    }
+    .home-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    .home-logo-wrap {
+      width: 110px;
+      height: 110px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #FEF3C7 0%, #D8B9FE 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 18px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.03);
+      transition: transform 0.3s;
+      overflow: hidden;
+      padding: 4px;
+      margin-top: 40px;
+    }
+    .home-logo-wrap img { width: 100%; height: 100%; object-fit: contain; border-radius: 22px; }
+    .home-brand-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      margin-top: 50px;
+    }
+    .home-brand-img {
+      height: 48px;
+      width: auto;
+      display: block;
+      object-fit: contain;
+    }
+    .home-tagline {
+      font-size: 14px;
+      font-weight: 400;
+      background: linear-gradient(180deg, #6E6E7A 0%, #B8B8C0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      opacity: 0.75;
+    }
+    /* Splash 过场动画 */
+    .home-logo-wrap, .home-brand-wrap, .home-tagline {
+      opacity: 0;
+    }
+    .home-logo-wrap.splash-anim {
+      animation: splashLogoIn 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    }
+    .home-brand-wrap.splash-anim {
+      animation: splashBrandIn 0.5s 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    }
+    .home-tagline.splash-anim {
+      animation: splashTaglineIn 0.4s 0.8s ease-out both;
+    }
+    @keyframes splashLogoIn {
+      from { opacity: 0; transform: scale(0.85); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes splashBrandIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes splashTaglineIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    /* Splash 退出 */
+    #page-home.splash-out {
+      animation: splashOut 0.4s ease-in both;
+    }
+    @keyframes splashOut {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(-30px); }
+    }
+    /* 下一页入场（菜单/拍照等） */
+    .page.splash-next {
+      animation: splashNextIn 0.4s 0.1s ease-out both;
+    }
+    @keyframes splashNextIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+
+    /* ============================================
+       拍照页
+       ============================================ */
+    #page-camera {
+      background: #000;
+      position: relative;
+    }
+    .cam-topbar {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      color: #fff;
+      font-size: 15px;
+      font-weight: 500;
+      z-index: 2;
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.5), transparent);
+    }
+    .cam-back {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.9;
+    }
+    .cam-preview-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cam-preview-card {
+      width: calc(100% - 40px);
+      max-height: 70vh;
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      background: rgba(255,255,255,0.08);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
+      position: relative;
+      aspect-ratio: 3/4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cam-preview-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+    .cam-preview-card.has-image img { display: block; }
+    .cam-preview-card.has-image { box-shadow: none; background: transparent; }
+
+    .cam-placeholder {
+      text-align: center;
+      color: rgba(255,255,255,0.4);
+      font-size: 15px;
+    }
+    .cam-placeholder .ph-icon { font-size: 56px; display: block; margin-bottom: 12px; opacity: 0.6; }
+    .cam-preview-card.has-image .cam-placeholder { display: none; }
+
+    .cam-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      padding: 24px 28px;
+      padding-bottom: max(28px, env(safe-area-inset-bottom));
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,0.6));
+      z-index: 2;
+    }
+    .cam-aux-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 0.5px solid rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cam-aux-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.92); }
+
+    /* 快门按钮 */
+    .shutter-wrap {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .shutter-ring {
+      position: absolute;
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(255,255,255,0.5);
+    }
+    .shutter-btn {
+      width: 63px;
+      height: 63px;
+      border-radius: 50%;
+      background: #fff;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      box-shadow: 0 0 20px rgba(255,255,255,0.2);
+      position: relative;
+      z-index: 1;
+    }
+    .shutter-btn:active { transform: scale(0.88); }
+    .shutter-btn.ready {
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    .cam-hint {
+      color: rgba(255,255,255,0.5);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .hidden-input { display: none; }
+
+    /* 分析按钮（拍照页底部）*/
+    .btn-analyze-bar {
+      width: calc(100% - 56px);
+      max-width: 320px;
+      height: 48px;
+      background: var(--primary-gradient);
+      color: #fff;
+      border: none;
+      border-radius: var(--r-full);
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      cursor: pointer;
+      opacity: 0.4;
+      pointer-events: none;
+      transition: all 0.25s;
+      margin: 0 auto 16px;
+      display: block;
+    }
+    .btn-analyze-bar.ready { opacity: 1; pointer-events: auto; }
+    .btn-analyze-bar:active { transform: scale(0.96); }
+
+    /* ============================================
+       加载页
+       ============================================ */
+    #page-loading {
+      background: #fff;
+      justify-content: center;
+      align-items: center;
+    }
+    .loading-container {
+      text-align: center;
+      padding: 40px;
+    }
+    .loading-ring-wrap {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 36px;
+    }
+    .loading-ring-svg {
+      width: 120px;
+      height: 120px;
+      transform: rotate(-90deg);
+    }
+    .loading-ring-bg {
+      fill: none;
+      stroke: #F0F0F5;
+      stroke-width: 4;
+    }
+    .loading-ring-fg {
+      fill: none;
+      stroke: url(#ringGradient);
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 283;
+      stroke-dashoffset: 283;
+      animation: spin-ring 2s linear infinite;
+    }
+    .loading-icon {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+    .loading-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .loading-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 28px;
+    }
+    .loading-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 240px;
+      margin: 0 auto;
+    }
+    .loading-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-tertiary);
+      transition: color 0.3s;
+    }
+    .loading-step .ldot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #E0E0E5;
+      flex-shrink: 0;
+      transition: all 0.3s;
+    }
+    .loading-step.done { color: #34C759; }
+    .loading-step.done .ldot { background: #34C759; }
+    .loading-step.current { color: var(--primary); font-weight: 500; }
+    .loading-step.current .ldot {
+      background: var(--primary);
+      box-shadow: 0 0 8px rgba(0,47,167,0.5);
+      animation: pulse-glow 1.5s ease-in-out infinite;
+    }
+
+    /* ============================================
+       结果页
+       ============================================ */
+    #page-result {
+      background: var(--bg);
+    }
+    .result-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      background: var(--card);
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .result-back {
+      font-size: 15px;
+      color: var(--primary);
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .result-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .result-share {
+      font-size: 20px;
+      cursor: pointer;
+      opacity: 0.5;
+    }
+
+    /* 环形评分 */
+    .score-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 20px 20px;
+    }
+    .score-ring-wrap {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      margin-bottom: 16px;
+    }
+    .score-ring-svg {
+      width: 160px;
+      height: 160px;
+      transform: rotate(-90deg);
+    }
+    .score-ring-bg {
+      fill: none;
+      stroke: #EEEEF2;
+      stroke-width: 6;
+    }
+    .score-ring-fg {
+      fill: none;
+      stroke: url(#scoreGradient);
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-dasharray: 440;
+      transition: stroke-dashoffset 1.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    .score-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .score-big {
+      font-size: 52px;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+      letter-spacing: -2px;
+      animation: countUp 0.6s ease-out both;
+    }
+    .score-unit {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    .score-level-tag {
+      margin-top: 8px;
+      padding: 4px 16px;
+      border-radius: var(--r-full);
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* Tab */
+    .tab-bar {
+      display: flex;
+      gap: 4px;
+      padding: 0 16px 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      justify-content: center;
+    }
+    .tab-bar::-webkit-scrollbar { display: none; }
+    .tab-pill {
+      flex-shrink: 0;
+      padding: 8px 18px;
+      border-radius: var(--r-full);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s;
+    }
+    .tab-pill.active {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 2px 12px rgba(0,47,167,0.25);
+    }
+    .tab-content { display: none; padding: 0 16px 40px; animation: fadeUp 0.35s ease-out; }
+    .tab-content.active { display: block; }
+
+    /* 总评 */
+    .overall-comment-card {
+      background: var(--card);
+      border-radius: var(--r-lg);
+      padding: 18px 20px;
+      margin: 0 16px 16px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+      border-left: 3px solid var(--primary);
+    }
+
+    /* 维度卡片 */
+    .dim-card {
+      background: var(--card);
+      border-radius: var(--r-lg);
+      padding: 18px 20px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-xs);
+      transition: transform 0.2s;
+    }
+    .dim-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .dim-card-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .dim-card-label .dicon { font-size: 20px; }
+    .dim-card-score {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .dim-card-bar {
+      height: 6px;
+      background: #F0F0F5;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .dim-card-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--primary-gradient);
+      transition: width 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    .dim-card-comment {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* 优势 / 劣势 */
+    .insight-card {
+      background: var(--card);
+      border-radius: var(--r-lg);
+      padding: 18px 20px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-xs);
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .insight-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .insight-icon.strength { background: #E8F5E9; }
+    .insight-icon.weakness { background: #FFF3E0; }
+    .insight-body h4 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+    .insight-body p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* 计划卡片 */
+    .plan-card {
+      background: var(--card);
+      border-radius: var(--r-lg);
+      padding: 20px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-xs);
+      position: relative;
+      overflow: hidden;
+    }
+    .plan-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+    }
+    .plan-card.short::before { background: var(--primary); }
+    .plan-card.mid::before  { background: #5856D6; }
+    .plan-card.long::before { background: #AF52DE; }
+    .plan-card h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .plan-card .plan-badge {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 10px;
+      border-radius: var(--r-full);
+      background: #F0F0F5;
+      color: var(--text-secondary);
+    }
+    .plan-card p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* 穿搭 */
+    .style-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 16px 16px;
+    }
+    .style-tag {
+      padding: 8px 18px;
+      border-radius: var(--r-full);
+      font-size: 13px;
+      font-weight: 500;
+      background: #F0F0F5;
+      color: var(--text-secondary);
+    }
+    .style-tag.main {
+      background: var(--primary-gradient);
+      color: #fff;
+      font-weight: 600;
+    }
+    .color-dots {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0 6px;
+    }
+    .color-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+    .outfit-card {
+      background: var(--card);
+      border-radius: var(--r-lg);
+      padding: 16px 18px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-xs);
+    }
+    .outfit-card h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .outfit-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* 底部 */
+    .result-footer {
+      text-align: center;
+      padding: 8px 20px 48px;
+    }
+    .btn-retry {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 46px;
+      padding: 0 28px;
+      border-radius: var(--r-full);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      background: var(--card);
+      color: var(--primary);
+      border: 1.5px solid rgba(0,47,167,0.2);
+      transition: all 0.15s;
+    }
+    .btn-retry:active { background: #F0F4FF; border-color: var(--primary); }
+
+    /* ============================================
+       主菜单页
+       ============================================ */
+    #page-menu {
+      background: var(--bg);
+      justify-content: center;
+      padding: 32px 0;
+      overflow: hidden;
+    }
+    .menu-brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .menu-brand img {
+      height: 36px;
+      width: auto;
+      display: block;
+      margin: 0 auto 14px;
+    }
+    .menu-brand .menu-tagline {
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+    .menu-cards {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding: 8px 20px 16px;
+    }
+    .menu-cards::-webkit-scrollbar { display: none; }
+    .menu-card {
+      flex-shrink: 0;
+      width: 155px;
+      height: 180px;
+      border-radius: var(--r-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      scroll-snap-align: center;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+    }
+    .menu-card:active { transform: scale(0.95); box-shadow: var(--shadow-md); }
+    .menu-card-icon { width: 48px; height: 48px; position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; }
+    .menu-card-icon svg { width: 100%; height: 100%; }
+    .menu-card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      position: relative; z-index: 1;
+    }
+    .menu-card-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 1.5;
+      padding: 0 12px;
+      position: relative; z-index: 1;
+    }
+    /* 卡片渐变底色 */
+    .menu-card.card-pk       { background: linear-gradient(160deg, #F3E8FF 0%, #FDE8F0 50%, #FFF5F5 100%); }
+    .menu-card.card-star     { background: linear-gradient(160deg, #FFF7E6 0%, #FFEDD5 50%, #FFF8F0 100%); }
+    .menu-card.card-analyze  { background: linear-gradient(160deg, #E8F0FE 0%, #D0E0FF 50%, #EDF4FF 100%); }
+    /* 卡片入场 stagger */
+    .menu-card.anim-in { animation: fadeUp 0.5s ease-out both; }
+    .menu-cards.anim-done .menu-card { animation: none; opacity: 1; transform: translateY(0); }
+    /* 底部指示器 */
+    .menu-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 4px 0 20px;
+    }
+    .menu-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #D0D0D8;
+      transition: all 0.3s;
+    }
+    .menu-dot.active { background: var(--primary); width: 18px; border-radius: 3px; }
+
+    /* ============================================
+       PK 四宫格页
+       ============================================ */
+    #page-pk-grid {
+      background: var(--bg);
+    }
+    .pkg-topbar {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .pkg-back { cursor: pointer; color: var(--primary); font-weight: 500; }
+    .pkg-title { flex: 1; text-align: center; color: var(--text); }
+    .pkg-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 16px 20px;
+    }
+    .pkg-slot {
+      aspect-ratio: 3 / 4;
+      border-radius: var(--r-md);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .pkg-slot:active { transform: scale(0.97); }
+    /* 空位 */
+    .pkg-slot.empty {
+      border: 2px dashed #D0D0D8;
+      background: #FAFAFC;
+    }
+    .pkg-slot.empty .pkg-plus {
+      font-size: 32px;
+      color: #C0C0CA;
+      margin-bottom: 6px;
+    }
+    .pkg-slot.empty .pkg-hint {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+    .pkg-slot.empty .pkg-label {
+      position: absolute;
+      bottom: 10px;
+      font-size: 11px;
+      color: #C0C0CA;
+      font-weight: 500;
+    }
+    /* 已拍 */
+    .pkg-slot.filled {
+      border: none;
+      background: #EEE;
+    }
+    .pkg-slot.filled img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .pkg-slot .pkg-check {
+      position: absolute;
+      top: 8px; right: 8px;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #34C759;
+      color: #fff;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pkg-slot .pkg-retake {
+      position: absolute;
+      bottom: 8px; right: 8px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      font-size: 11px;
+      backdrop-filter: blur(4px);
+    }
+    .pkg-hint-text {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-tertiary);
+      padding: 0 20px 12px;
+    }
+    .pkg-btn-wrap { padding: 0 20px 32px; }
+    .btn-pk-go {
+      width: 100%;
+      height: 52px;
+      border-radius: var(--r-full);
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-pk-go.disabled {
+      background: #E8E8EC;
+      color: #B0B0BA;
+      pointer-events: none;
+    }
+    .btn-pk-go.ready {
+      background: var(--primary-gradient);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(0,47,167,0.25);
+    }
+    .btn-pk-go.ready:active { transform: scale(0.96); opacity: 0.85; }
+
+    /* 底部 ActionSheet */
+    .actionsheet-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 100;
+      align-items: flex-end;
+    }
+    .actionsheet-overlay.show { display: flex; }
+    .actionsheet-panel {
+      width: 100%;
+      background: var(--card);
+      border-radius: 20px 20px 0 0;
+      padding: 8px 16px max(24px, env(safe-area-inset-bottom));
+      animation: fadeUp 0.25s ease-out;
+    }
+    .actionsheet-option {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      border-bottom: 1px solid #F0F0F5;
+      gap: 8px;
+    }
+    .actionsheet-option:last-child { border-bottom: none; color: var(--text-secondary); font-weight: 400; }
+    .actionsheet-option:active { opacity: 0.6; }
+
+    /* ============================================
+       PK 结果页
+       ============================================ */
+    #page-pk-result {
+      background: radial-gradient(ellipse 60% 50% at 50% 20%, #FFF8E1 0%, #FFFDF5 45%, #F2F5FA 100%);
+    }
+    .pk-result-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      background: var(--card);
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      position: sticky;
+      top: 0; z-index: 10;
+    }
+    /* PK 结果照片区 — 按人数自适应 */
+    .pk-result-hero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 24px 20px 16px;
+    }
+    /* 2人：并排居中 */
+    .pk-result-hero.count-2 {
+      gap: 4px;
+    }
+    .pk-result-hero.count-2 .pk-hero-card {
+      width: 140px;
+    }
+    .pk-result-hero.count-2 .pk-hero-photo {
+      width: 140px;
+    }
+    .pk-result-hero.count-2 .pk-hero-vs {
+      margin: 0 2px;
+    }
+    /* 3人：品字形 podium */
+    .pk-result-hero.count-3 {
+      flex-wrap: wrap;
+      gap: 6px 10px;
+    }
+    .pk-result-hero.count-3 .pk-hero-card {
+      width: 120px;
+    }
+    .pk-result-hero.count-3 .pk-hero-card.winner-card {
+      width: 140px;
+      order: -1;
+    }
+    .pk-result-hero.count-3 .pk-hero-photo {
+      width: 120px;
+    }
+    .pk-result-hero.count-3 .pk-hero-card.winner-card .pk-hero-photo {
+      width: 140px;
+    }
+    .pk-result-hero.count-3 .pk-hero-vs {
+      display: none;
+    }
+    .pk-result-hero.count-3 .pk-hero-vs.winner-vs {
+      display: block;
+    }
+    /* 4人：2x2 网格 */
+    .pk-result-hero.count-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      justify-items: center;
+    }
+    .pk-result-hero.count-4 .pk-hero-card {
+      width: 130px;
+    }
+    .pk-result-hero.count-4 .pk-hero-photo {
+      width: 130px;
+    }
+    .pk-result-hero.count-4 .pk-hero-vs {
+      display: none;
+    }
+
+    .pk-hero-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .pk-hero-card.winner-card .pk-hero-photo {
+      box-shadow: 0 0 0 3px #FFD700, 0 0 20px rgba(255,215,0,0.3);
+    }
+    .pk-hero-card.winner-card .pk-hero-score {
+      color: #D4A017;
+    }
+    .pk-hero-photo {
+      width: 120px;
+      aspect-ratio: 3/4;
+      border-radius: var(--r-md);
+      overflow: hidden;
+      background: #EEE;
+      position: relative;
+    }
+    .pk-hero-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .pk-hero-rank {
+      position: absolute;
+      top: -8px; left: -8px;
+      font-size: 24px;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));
+      z-index: 2;
+    }
+    .pk-hero-score {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-top: 6px;
+    }
+    .pk-hero-label {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+    .pk-hero-vs {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-tertiary);
+      flex-shrink: 0;
+      margin-top: -20px;
+    }
+    /* 雷达图 */
+    .pk-radar {
+      width: 100px;
+      height: 92px;
+      margin: 6px auto 0;
+      display: block;
+    }
+    .pk-radar polyline.grid { fill: none; stroke: #E8E8EC; stroke-width: 0.5; }
+    .pk-radar line.axis { stroke: #E0E0E5; stroke-width: 0.5; }
+    .pk-radar text.label { font-size: 9px; fill: #888; text-anchor: middle; }
+    .pk-radar polygon.data { fill: rgba(0,47,167,0.18); stroke: var(--primary); stroke-width: 1.2; }
+    .pk-radar circle.dot { fill: var(--primary); }
+    .pk-winner-banner {
+      text-align: center;
+      padding: 12px 20px 20px;
+      position: relative;
+      overflow: visible;
+    }
+    .pk-winner-reason {
+      font-size: 14px;
+      color: #8B7355;
+      line-height: 1.8;
+      margin: 10px 20px 0;
+      text-align: center;
+    }
+    /* 烟花粒子 */
+    .firework {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 0; height: 0;
+      pointer-events: none;
+    }
+    .firework .particle {
+      position: absolute;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      animation: fireBurst 1s ease-out both;
+    }
+    @keyframes fireBurst {
+      0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+    }
+    .firework .spark {
+      position: absolute;
+      width: 2px; height: 8px;
+      border-radius: 1px;
+      animation: sparkFly 0.8s ease-out both;
+    }
+    @keyframes sparkFly {
+      0%   { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) rotate(360deg) scale(0); opacity: 0; }
+    }
+    .pk-winner-text {
+      display: inline-block;
+      padding: 8px 24px;
+      border-radius: var(--r-full);
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #B8860B, #D4A017, #FFD700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 2px 6px rgba(180,130,10,0.35));
+    }
+    .pk-dim-section {
+      padding: 8px 20px 24px;
+    }
+    .pk-dim-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    /* 卡通排名卡片 */
+    .pk-rank-card {
+      background: #FFF;
+      border-radius: 20px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 3px 16px rgba(0,0,0,0.05);
+      position: relative;
+      overflow: hidden;
+      animation: rankBounceIn 0.5s ease-out both;
+    }
+    .pk-rank-card::after {
+      content: '';
+      position: absolute;
+      top: -18px; right: -18px;
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      opacity: 0.08;
+    }
+    .pk-rank-card.rank-1 { border: 2px solid #FFD700; background: linear-gradient(135deg, #FFFEF5, #FFF8E1); }
+    .pk-rank-card.rank-1::after { background: #FFD700; }
+    .pk-rank-card.rank-2 { border: 2px solid #C0C0C0; background: linear-gradient(135deg, #FDFDFD, #F5F5F5); }
+    .pk-rank-card.rank-2::after { background: #C0C0C0; }
+    .pk-rank-card.rank-3 { border: 2px solid #E8B86D; background: linear-gradient(135deg, #FFFCF5, #FFF5E6); }
+    .pk-rank-card.rank-3::after { background: #E8B86D; }
+    .pk-rank-card.rank-other { border: 2px solid #E8E8EC; }
+    .pk-rank-card.rank-other::after { background: #CCC; }
+
+    @keyframes rankBounceIn {
+      0%   { opacity: 0; transform: translateY(20px) scale(0.9); }
+      60%  { opacity: 1; transform: translateY(-4px) scale(1.02); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .pk-rank-emoji {
+      font-size: 32px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+      animation: rankWiggle 0.6s ease-out 0.3s both;
+    }
+    @keyframes rankWiggle {
+      0% { transform: scale(0) rotate(-15deg); }
+      60% { transform: scale(1.2) rotate(5deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .pk-rank-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .pk-rank-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #4A4A5A;
+      flex: 1;
+    }
+    .pk-rank-score-badge {
+      font-size: 24px;
+      font-weight: 800;
+      padding: 2px 12px;
+      border-radius: 14px;
+      letter-spacing: -1px;
+    }
+    .rank-1 .pk-rank-score-badge { color: #B8860B; background: #FFF8E1; }
+    .rank-2 .pk-rank-score-badge { color: #777; background: #F5F5F5; }
+    .rank-3 .pk-rank-score-badge { color: #C77D20; background: #FFF5E6; }
+    .rank-other .pk-rank-score-badge { color: #999; background: #F8F8FA; }
+
+    .pk-rank-comment {
+      font-size: 13px;
+      color: #8E8E9A;
+      line-height: 1.6;
+      padding-left: 42px;
+    }
+    .pk-rank-stars {
+      font-size: 11px;
+      letter-spacing: 2px;
+      margin-top: 4px;
+      padding-left: 42px;
+    }
+    .pk-dim-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .pk-dim-bars {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .pk-dim-bar-a, .pk-dim-bar-b {
+      height: 6px;
+      border-radius: 3px;
+      transition: width 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    .pk-dim-bar-a { background: #FF9500; }
+    .pk-dim-bar-b { background: var(--primary-gradient); }
+    .pk-dim-bar-wrap { flex: 1; background: #F0F0F5; border-radius: 3px; height: 6px; overflow: hidden; }
+    .pk-dim-comment {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .pk-overall {
+      padding: 0 20px 40px;
+    }
+    .pk-overall-card {
+      background: #F5F8FF;
+      border-radius: var(--r-lg);
+      padding: 18px 20px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text);
+      box-shadow: var(--shadow-xs);
+      border-left: 3px solid var(--primary);
+    }
+    .pk-overall-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    /* ============================================
+       个人中心
+       ============================================ */
+    #page-profile {
+      background: var(--bg);
+    }
+    .profile-topbar {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .profile-back { cursor: pointer; color: var(--primary); font-weight: 500; }
+    .profile-title { flex: 1; text-align: center; color: var(--text); }
+    .profile-body {
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .profile-avatar {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: #fff;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .profile-nickname {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+    .profile-login-area {
+      width: 100%;
+      max-width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .btn-login {
+      height: 52px;
+      border-radius: var(--r-md);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.15s;
+    }
+    .btn-login:active { transform: scale(0.97); }
+    .btn-login.wechat { background: #07C160; color: #fff; }
+    .btn-login.qq     { background: #12B7F5; color: #fff; }
+    .btn-login.phone  { background: var(--card); color: var(--text); border: 1.5px solid #E0E0E5; }
+    /* 手机号输入区 */
+    .phone-section {
+      width: 100%;
+      max-width: 300px;
+      margin-top: 4px;
+    }
+    .phone-input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .phone-input {
+      flex: 1;
+      height: 48px;
+      border: 1.5px solid #E0E0E5;
+      border-radius: var(--r-md);
+      padding: 0 14px;
+      font-size: 16px;
+      outline: none;
+      background: #F9F9FB;
+    }
+    .phone-input:focus { border-color: var(--primary); }
+    .btn-send-code {
+      height: 48px;
+      padding: 0 16px;
+      border-radius: var(--r-md);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: var(--primary-gradient);
+      color: #fff;
+      white-space: nowrap;
+    }
+    .btn-send-code:disabled { opacity: 0.4; pointer-events: none; }
+    .btn-send-code:active { opacity: 0.8; }
+    .profile-menu-item {
+      width: 100%;
+      max-width: 300px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card);
+      border-radius: var(--r-md);
+      padding: 0 18px;
+      margin-bottom: 8px;
+      box-shadow: var(--shadow-xs);
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .profile-menu-item:active { background: #F5F5F8; }
+    .profile-menu-item .arrow { color: var(--text-tertiary); }
+    .profile-hint {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      text-align: center;
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+
+    /* ============================================
+       Modal & Toast
+       ============================================ */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: var(--card);
+      border-radius: var(--r-xl);
+      padding: 28px 24px 20px;
+      width: 100%;
+      max-width: 340px;
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .modal-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.6; }
+    .modal-desc a { color: var(--primary); }
+    .modal-input {
+      width: 100%;
+      height: 48px;
+      border: 1.5px solid #E8E8EC;
+      border-radius: var(--r-md);
+      padding: 0 14px;
+      font-size: 13px;
+      font-family: monospace;
+      outline: none;
+      transition: border-color 0.2s;
+      background: #F9F9FB;
+    }
+    .modal-input:focus { border-color: var(--primary); background: #fff; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+    .modal-btn {
+      flex: 1;
+      height: 44px;
+      border-radius: var(--r-full);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+    .modal-btn.primary { background: var(--primary-gradient); color: #fff; }
+    .modal-btn.primary:active { opacity: 0.85; }
+    .modal-btn.secondary { background: #F5F5F8; color: var(--text); }
+    .modal-btn.secondary:active { background: #E8E8EC; }
+
+    .toast {
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(28,28,46,0.9);
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: var(--r-full);
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .toast.show { opacity: 1; pointer-events: auto; }
+
+    /* 桌面 */
+    @media (min-width: 768px) {
+      .page { max-width: 430px; margin: 0 auto; border-left: 1px solid #EEE; border-right: 1px solid #EEE; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ========== 首页 ========== -->
+  <div class="page active" id="page-home" onclick="skipSplash()">
+    <div class="home-bg-deco home-deco-1"></div>
+    <div class="home-bg-deco home-deco-2"></div>
+    <div class="home-inner">
+      <div class="home-logo-wrap" id="main-logo">
+        <img src="logo.png" alt="美评" id="logo-img" />
+      </div>
+
+      <div class="home-brand-wrap">
+        <img class="home-brand-img" src="brand_text.png" alt="美评" />
+        <div class="home-tagline">— 发现你的美 —</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 拍照页 ========== -->
+  <div class="page" id="page-camera">
+    <div class="cam-topbar">
+      <span class="cam-back" onclick="goToMenu()">← 返回</span>
+    </div>
+    <div class="cam-preview-area">
+      <div class="cam-preview-card" id="preview">
+        <div class="cam-placeholder">
+          <span class="ph-icon">📷</span>
+          拍照或从相册选择
+        </div>
+        <img id="preview-img" alt="">
+      </div>
+    </div>
+    <input type="file" class="hidden-input" id="input-camera" accept="image/*" capture="environment" onchange="handleFile(event)">
+    <input type="file" class="hidden-input" id="input-album" accept="image/*" onchange="handleFile(event)">
+    <div class="cam-controls">
+      <div class="cam-aux-btn" onclick="pickAlbum()">🖼️</div>
+      <div class="shutter-wrap">
+        <div class="shutter-ring"></div>
+        <button class="shutter-btn" id="shutter-btn" onclick="takePhoto()"></button>
+      </div>
+      <div class="cam-aux-btn" style="opacity:0"></div>
+    </div>
+    <button class="btn-analyze-bar" id="btn-analyze" onclick="startAnalysis()">✨ 开始分析</button>
+  </div>
+
+  <!-- ========== 加载页 ========== -->
+  <div class="page center" id="page-loading">
+    <div class="loading-container">
+      <div class="loading-ring-wrap">
+        <svg class="loading-ring-svg" viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#002FA7"/>
+              <stop offset="100%" stop-color="#4D7CFE"/>
+            </linearGradient>
+          </defs>
+          <circle class="loading-ring-bg" cx="60" cy="60" r="45"/>
+          <circle class="loading-ring-fg" cx="60" cy="60" r="45"/>
+        </svg>
+        <div class="loading-icon">💎</div>
+      </div>
+      <h2 class="loading-title" id="loading-title">AI 正在分析中…</h2>
+      <p class="loading-subtitle" id="loading-subtitle">请稍候，这可能需要几秒钟</p>
+      <div class="loading-steps">
+        <div class="loading-step current" id="step-1"><span class="ldot"></span>识别面部特征</div>
+        <div class="loading-step" id="step-2"><span class="ldot"></span>分析五官比例</div>
+        <div class="loading-step" id="step-3"><span class="ldot"></span>评估整体气质</div>
+        <div class="loading-step" id="step-4"><span class="ldot"></span>生成变美建议</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 结果页 ========== -->
+  <div class="page" id="page-result">
+    <div class="result-topbar">
+      <span class="result-back" onclick="goToMenu()">← 返回</span>
+      <span class="result-title">美评</span>
+      <span class="result-share" onclick="shareResult()">📤</span>
+    </div>
+
+    <div class="score-hero">
+      <div class="score-ring-wrap">
+        <svg class="score-ring-svg" viewBox="0 0 160 160">
+          <defs>
+            <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#002FA7"/>
+              <stop offset="100%" stop-color="#4D7CFE"/>
+            </linearGradient>
+          </defs>
+          <circle class="score-ring-bg" cx="80" cy="80" r="70"/>
+          <circle class="score-ring-fg" id="score-ring-fg" cx="80" cy="80" r="70"/>
+        </svg>
+        <div class="score-center">
+          <div class="score-big" id="score-num">--</div>
+          <div class="score-unit">/ 10 分</div>
+        </div>
+      </div>
+      <div class="score-level-tag" id="score-level">--</div>
+    </div>
+
+    <div class="tab-bar" id="tab-nav">
+      <button class="tab-pill active" data-tab="score">⭐ 综合</button>
+      <button class="tab-pill" data-tab="strengths">👍 优势</button>
+      <button class="tab-pill" data-tab="weaknesses">💡 改进</button>
+      <button class="tab-pill" data-tab="plan">📅 计划</button>
+      <button class="tab-pill" data-tab="style">👗 穿搭</button>
+    </div>
+
+    <!-- Tab: 综合 -->
+    <div class="tab-content active" id="tab-score">
+      <div class="overall-comment-card" id="comment-overall"></div>
+      <div id="dimensions"></div>
+    </div>
+
+    <!-- Tab: 优势 -->
+    <div class="tab-content" id="tab-strengths">
+      <div id="strengths-list"></div>
+    </div>
+
+    <!-- Tab: 改进 -->
+    <div class="tab-content" id="tab-weaknesses">
+      <div id="weaknesses-list"></div>
+    </div>
+
+    <!-- Tab: 计划 -->
+    <div class="tab-content" id="tab-plan">
+      <div id="plan-content"></div>
+    </div>
+
+    <!-- Tab: 穿搭 -->
+    <div class="tab-content" id="tab-style">
+      <div id="style-content"></div>
+    </div>
+
+    <div class="result-footer">
+      <button class="btn-retry" onclick="startAnalyze()">🔄 重新评测</button>
+    </div>
+  </div>
+
+  <!-- ========== 主菜单页 ========== -->
+  <div class="page" id="page-menu">
+    <div class="menu-brand">
+      <img src="brand_text.png" alt="美评" />
+      <div class="menu-tagline">— 发现你的美 —</div>
+    </div>
+    <div class="menu-cards" id="menu-cards">
+      <div class="menu-card card-pk " onclick="startPK()" style="animation-delay:0s">
+        <span class="menu-card-icon"><svg viewBox="0 0 48 48" fill="none" stroke="#C08497" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="17" r="5.5"/><path d="M7 32c0-4.5 4-8.5 9-8.5s9 4 9 8.5"/><circle cx="32" cy="17" r="5.5"/><path d="M23 32c0-4.5 4-8.5 9-8.5s9 4 9 8.5"/><line x1="24" y1="8" x2="24" y2="38" stroke="#D0A0B5" stroke-width="1" stroke-dasharray="2.5 3"/></svg></span>
+        <span class="menu-card-title">颜值PK</span>
+        <span class="menu-card-desc">上传两人照片<br/>AI判定谁更美</span>
+      </div>
+      <div class="menu-card card-star anim-in" onclick="startCelebrity()" style="animation-delay:0.1s">
+        <span class="menu-card-icon"><svg viewBox="0 0 48 48" fill="none" stroke="#D4A017" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="24,6 29,18 42,18 32,26 36,40 24,32 12,40 16,26 6,18 19,18"/><circle cx="10" cy="12" r="1.2" fill="#D4A017" stroke="none"/><circle cx="38" cy="10" r="1" fill="#D4A017" stroke="none"/><circle cx="42" cy="28" r="0.8" fill="#D4A017" stroke="none"/><circle cx="7" cy="30" r="0.8" fill="#D4A017" stroke="none"/></svg></span>
+        <span class="menu-card-title">我像大明星</span>
+        <span class="menu-card-desc">拍照看看你<br/>像哪位明星</span>
+      </div>
+      <div class="menu-card card-analyze anim-in" onclick="startAnalyze()" style="animation-delay:0.2s">
+        <span class="menu-card-icon"><svg viewBox="0 0 48 48" fill="none" stroke="#4D7CFE" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="19" r="7"/><path d="M10 35c0-5 5.5-10 10-10s10 5 10 10"/><line x1="31" y1="31" x2="42" y2="42" stroke-width="2.2"/><circle cx="24" cy="24" r="20" stroke-dasharray="2 4" stroke="#B0C8FF" stroke-width="0.7"/></svg></span>
+        <span class="menu-card-title">颜值分析</span>
+        <span class="menu-card-desc">全方位颜值评估<br/>与穿搭建议</span>
+      </div>
+    </div>
+    <div class="menu-dots">
+      <span class="menu-dot active"></span>
+      <span class="menu-dot"></span>
+      <span class="menu-dot"></span>
+    </div>
+    <!-- 底部「我的」入口 -->
+    <div style="padding: 0 20px; margin-top: 8px;">
+      <div class="profile-menu-item" onclick="goToProfile()" style="max-width:100%">
+        <span>👤 我的</span>
+        <span style="font-size:12px;color:var(--text-tertiary)" id="menu-user-hint">点击登录</span>
+        <span class="arrow">›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 个人中心 ========== -->
+  <div class="page" id="page-profile">
+    <div class="profile-topbar">
+      <span class="profile-back" onclick="goToMenu()">← 返回</span>
+      <span class="profile-title">我的</span>
+      <span style="width:48px"></span>
+    </div>
+    <div class="profile-body" id="profile-body">
+      <!-- 由 JS 动态渲染 -->
+    </div>
+  </div>
+
+  <!-- ========== PK 四宫格页 ========== -->
+  <div class="page" id="page-pk-grid">
+    <div class="pkg-topbar">
+      <span class="pkg-back" onclick="cancelPK()">← 返回</span>
+      <span class="pkg-title">颜值PK</span>
+      <span style="width:48px"></span>
+    </div>
+    <div class="pkg-grid" id="pkg-grid">
+      <div class="pkg-slot empty" onclick="openSlot(0)" id="pkg-slot-0">
+        <span class="pkg-plus">+</span>
+        <span class="pkg-hint">添加照片</span>
+        <span class="pkg-label">第1位</span>
+      </div>
+      <div class="pkg-slot empty" onclick="openSlot(1)" id="pkg-slot-1">
+        <span class="pkg-plus">+</span>
+        <span class="pkg-hint">添加照片</span>
+        <span class="pkg-label">第2位</span>
+      </div>
+      <div class="pkg-slot empty" onclick="openSlot(2)" id="pkg-slot-2">
+        <span class="pkg-plus">+</span>
+        <span class="pkg-hint">添加照片</span>
+        <span class="pkg-label">第3位</span>
+      </div>
+      <div class="pkg-slot empty" onclick="openSlot(3)" id="pkg-slot-3">
+        <span class="pkg-plus">+</span>
+        <span class="pkg-hint">添加照片</span>
+        <span class="pkg-label">第4位</span>
+      </div>
+    </div>
+    <div class="pkg-hint-text" id="pkg-hint">💡 最少2张，最多4张照片</div>
+    <div class="pkg-btn-wrap">
+      <button class="btn-pk-go disabled" id="btn-pk-go" onclick="startPKAnalysis()">
+        🤼 开始PK（至少需要2张）
+      </button>
+    </div>
+  </div>
+
+  <!-- 底部 ActionSheet -->
+  <div class="actionsheet-overlay" id="actionsheet" onclick="closeActionSheet(event)">
+    <div class="actionsheet-panel" onclick="event.stopPropagation()">
+      <div class="actionsheet-option" onclick="takePhotoForSlot()">📷 拍照</div>
+      <div class="actionsheet-option" onclick="pickAlbumForSlot()">🖼️ 从相册选择</div>
+      <div class="actionsheet-option" id="as-close-option" style="display:none;color:#FF3B30" onclick="removeSlotPhoto()">✕ 关闭</div>
+      <div class="actionsheet-option" onclick="closeActionSheet()">取消</div>
+    </div>
+  </div>
+
+  <!-- PK 拍照隐藏输入 -->
+  <input type="file" class="hidden-input" id="input-pk-camera" accept="image/*" capture="environment" onchange="handleSlotFile(event)">
+  <input type="file" class="hidden-input" id="input-pk-album" accept="image/*" onchange="handleSlotFile(event)">
+
+  <!-- ========== PK 结果页 ========== -->
+  <div class="page" id="page-pk-result">
+    <div class="pk-result-topbar">
+      <span class="result-back" onclick="goToMenu()">← 返回</span>
+      <span class="result-title">PK 结果</span>
+      <span style="width:48px"></span>
+    </div>
+    <div class="pk-result-hero">
+      <!-- 由 renderPKResults 动态生成 -->
+    </div>
+    <div class="pk-winner-banner">
+      <div class="pk-winner-text" id="pk-winner-text">--</div>
+    </div>
+    <div class="pk-winner-reason" id="pk-winner-reason"></div>
+    <div class="pk-dim-section">
+      <div id="pk-dimensions"></div>
+    </div>
+    <div class="pk-overall">
+      <div class="pk-overall-card" id="pk-overall-comment"></div>
+    </div>
+  </div>
+
+  <!-- ========== SVG 渐变定义（全局） ========== -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#002FA7"/>
+        <stop offset="100%" stop-color="#4D7CFE"/>
+      </linearGradient>
+      <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#002FA7"/>
+        <stop offset="100%" stop-color="#4D7CFE"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <script>
+    /* ============================================
+       美评 — JavaScript 逻辑 (v2)
+       ============================================ */
+
+    let currentImage = null;
+    let analysisResult = null;
+    let appMode = 'analyze';     // 'analyze' | 'pk' | 'celebrity'
+    let pkPhotos = [null, null, null, null]; // PK 四格照片 { base64, file }
+    let currentSlotIndex = 0;   // 当前操作的格子
+
+    // ── 本地账号系统 ────────────────────────
+    function getSession() {
+      try { return JSON.parse(localStorage.getItem('meiping_session') || 'null'); } catch(e) { return null; }
+    }
+    function saveSession(s) {
+      localStorage.setItem('meiping_session', JSON.stringify(s));
+      updateMenuHint();
+    }
+    function clearSession() {
+      localStorage.removeItem('meiping_session');
+      updateMenuHint();
+    }
+    function updateMenuHint() {
+      const hint = document.getElementById('menu-user-hint');
+      const session = getSession();
+      if (hint) hint.textContent = session ? (session.nickname || '已登录') : '点击登录';
+    }
+
+    function goToProfile() {
+      showPage('page-profile');
+      renderProfile();
+    }
+    function renderProfile() {
+      const session = getSession();
+      const body = document.getElementById('profile-body');
+      if (session) {
+        const initial = (session.nickname || session.phone || '?')[0].toUpperCase();
+        const hue = (session.phone || session.nickname || '0').split('').reduce((a,c)=>a+c.charCodeAt(0),0) % 360;
+        body.innerHTML = `
+          <div class="profile-avatar" style="background:linear-gradient(135deg,hsl(${hue},60%,55%),hsl(${(hue+40)%360},60%,45%))">${initial}</div>
+          <div class="profile-nickname">${escapeHTML(session.nickname || session.phone || '用户')}</div>
+          <div class="profile-menu-item" onclick="showToast('📊 评测记录即将上线')"><span>📊 我的评测记录</span><span class="arrow">›</span></div>
+          <div class="profile-menu-item" onclick="showNicknameEditor()"><span>✏️ 修改昵称</span><span class="arrow">›</span></div>
+          <div class="profile-menu-item" onclick="showLoginMethod()"><span>📱 绑定手机号</span><span class="arrow">›</span></div>
+          <div class="profile-menu-item" onclick="doLogout()"><span>🚪 退出登录</span><span class="arrow">›</span></div>
+        `;
+      } else {
+        body.innerHTML = `
+          <div class="profile-avatar" style="background:#D0D0D8">👤</div>
+          <div class="profile-nickname" style="color:var(--text-tertiary)">未登录</div>
+          <div class="profile-login-area">
+            <button class="btn-login wechat" onclick="quickLogin('微信用户')">💚 微信登录</button>
+            <button class="btn-login qq" onclick="quickLogin('QQ用户')">🐧 QQ登录</button>
+            <button class="btn-login phone" onclick="showPhoneLogin()">📱 手机号登录</button>
+          </div>
+          <div class="profile-hint">点击任一方式设置昵称即可登录<br/>（后续将接入真实第三方登录）</div>
+        `;
+      }
+    }
+    function quickLogin(prefix) {
+      const name = prompt('设置你的昵称', prefix);
+      if (name && name.trim()) {
+        saveSession({ nickname: name.trim(), loginTime: Date.now() });
+        showToast('🎉 登录成功');
+        renderProfile();
+      }
+    }
+    function showPhoneLogin() {
+      const body = document.getElementById('profile-body');
+      body.innerHTML = `
+        <div class="profile-avatar" style="background:#D0D0D8">📱</div>
+        <div class="profile-nickname">手机号登录</div>
+        <div class="phone-section">
+          <div class="phone-input-row">
+            <input class="phone-input" type="tel" id="phone-number" placeholder="输入手机号" maxlength="11" />
+            <button class="btn-send-code" onclick="phoneLogin()">获取验证码</button>
+          </div>
+          <div class="phone-input-row" id="otp-row" style="display:none">
+            <input class="phone-input" type="text" id="otp-code" placeholder="输入6位验证码" maxlength="6" />
+            <button class="btn-send-code" onclick="verifyOTP()">验证</button>
+          </div>
+          <div style="text-align:center;margin-top:8px">
+            <span style="font-size:13px;color:var(--text-tertiary);cursor:pointer" onclick="renderProfile()">← 返回</span>
+          </div>
+        </div>
+      `;
+    }
+    const SUPABASE_URL = 'https://mlpesqjbtkxptxqvkaeo.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1scGVzcWpidGt4cHR4cXZrYWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMDQ4MjUsImV4cCI6MjA5NTc4MDgyNX0.VgHSJywQLlLnWnLF3A-cHvRO5D7gMlfb15WoksjukCc';
+
+    function phoneLogin() {
+      const phone = document.getElementById('phone-number').value.replace(/\s/g, '');
+      if (!/^1\d{10}$/.test(phone)) { showToast('请输入正确的11位手机号'); return; }
+
+      fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: '+86' + phone })
+      }).then(r => r.json()).then(data => {
+        if (data.code) {
+          document.getElementById('otp-row').style.display = 'flex';
+          showToast('📩 验证码: ' + data.code);
+        } else {
+          showToast(JSON.stringify(data).slice(0, 200));
+        }
+      }).catch(e => {
+        showToast('发送失败: ' + e.message);
+      });
+    }
+    function verifyOTP() {
+      const phone = document.getElementById('phone-number').value.replace(/\s/g, '');
+      const token = document.getElementById('otp-code').value.trim();
+      if (!token) { showToast('请输入验证码'); return; }
+
+      fetch('/api/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: '+86' + phone, token: token, type: 'sms' })
+      }).then(r => r.json()).then(data => {
+        if (data.access_token) {
+          saveSession({
+            access_token: data.access_token,
+            phone: phone,
+            nickname: '',
+            user_id: data.user?.id || phone
+          });
+          showToast('🎉 登录成功');
+          renderProfile();
+        } else {
+          showToast('验证失败: ' + (data.error || JSON.stringify(data)));
+        }
+      }).catch(e => {
+        showToast('错误: ' + e.message);
+      });
+    }
+    function showNicknameEditor() {
+      const session = getSession();
+      const name = prompt('修改昵称', session.nickname || '');
+      if (name && name.trim()) {
+        session.nickname = name.trim();
+        saveSession(session);
+        renderProfile();
+      }
+    }
+    function showLoginMethod() {
+      showToast('📱 手机号绑定功能开发中');
+    }
+    function doLogout() {
+      if (confirm('确定退出登录？')) {
+        clearSession();
+        showToast('👋 已退出');
+        renderProfile();
+      }
+    }
+
+    // ── 结果缓存（相同照片 → 相同结果）──────
+    const resultCache = {};
+    function cacheKey(photos) {
+      // 取每张照片 base64 的前 200 字符做简易哈希
+      return photos.map(p => p.base64.slice(0, 200)).join('|');
+    }
+
+    // ── 页面导航 ──────────────────────────────
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach(p => {
+        p.classList.remove('active');
+        p.style.animation = ''; // 清除可能残留的 animation:none
+      });
+      document.getElementById(id).classList.add('active');
+    }
+    function goHome() {
+      appMode = 'analyze';
+      pkPhotos = [null, null, null, null];
+      showPage('page-home');
+      currentImage = null;
+      resetCameraUI();
+      startSplashAnimation();
+    }
+    function goToMenu() {
+      appMode = 'analyze';
+      pkPhotos = [null, null, null, null];
+      currentImage = null;
+      showPage('page-menu');
+    }
+    function goToCamera() {
+      // 更新顶栏文字
+      updateCameraTopbar();
+      showPage('page-camera');
+      currentImage = null;
+      resetCameraUI();
+    }
+    function goToLoading() {
+      const title = document.getElementById('loading-title');
+      const subtitle = document.getElementById('loading-subtitle');
+      if (appMode === 'pk') {
+        title.textContent = 'AI 正在裁决中…';
+        subtitle.textContent = '请稍候，正在对比多人颜值';
+        document.getElementById('step-1').lastChild.textContent = '分析多人面部特征';
+        document.getElementById('step-2').lastChild.textContent = '逐人评分对比';
+        document.getElementById('step-3').lastChild.textContent = '综合排名裁决';
+        document.getElementById('step-4').lastChild.textContent = '生成对比报告';
+      } else if (appMode === 'celebrity') {
+        title.textContent = '正在匹配明星脸…';
+        subtitle.textContent = '请稍候，这可能需要几秒钟';
+      } else {
+        title.textContent = 'AI 正在分析中…';
+        subtitle.textContent = '请稍候，这可能需要几秒钟';
+      }
+      showPage('page-loading');
+      resetLoadingSteps();
+    }
+    function goToResult() { showPage('page-result'); }
+
+    // ── 主菜单功能入口 ──────────────────────
+    function startAnalyze() {
+      appMode = 'analyze';
+      pkPhotos = [null, null, null, null];
+      goToCamera();
+    }
+    function startCelebrity() {
+      showToast('✨ 明星脸功能即将上线，敬请期待');
+      // appMode = 'celebrity'; goToCamera();
+    }
+    function startPK() {
+      appMode = 'pk';
+      pkPhotos = [null, null, null, null];
+      currentImage = null;
+      showPage('page-pk-grid');
+      // 重置所有格子 DOM，清除上一次 PK 的残留照片
+      for (let i = 0; i < 4; i++) renderSlot(i);
+      updatePKButton();
+    }
+    function cancelPK() {
+      appMode = 'analyze';
+      pkPhotos = [null, null, null, null];
+      currentImage = null;
+      goToMenu();
+    }
+
+    // ── Toast ─────────────────────────────────
+    let toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    // ── 拍照 / 相册 ───────────────────────────
+    function takePhoto() { document.getElementById('input-camera').click(); }
+    function pickAlbum() { document.getElementById('input-album').click(); }
+
+    function handleFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
+
+      compressImage(file, 2048).then(result => {
+        currentImage = { base64: result.base64, file: file };
+        const preview = document.getElementById('preview');
+        const img = document.getElementById('preview-img');
+        img.src = result.base64;
+        preview.classList.add('has-image');
+        document.getElementById('btn-analyze').classList.add('ready');
+        document.getElementById('shutter-btn').classList.add('ready');
+      }).catch(err => {
+        console.error('压缩失败:', err);
+        showToast('图片处理失败，请重试');
+      });
+      event.target.value = '';
+    }
+
+    function resetCameraUI() {
+      const preview = document.getElementById('preview');
+      const img = document.getElementById('preview-img');
+      preview.classList.remove('has-image');
+      img.src = '';
+      document.getElementById('btn-analyze').classList.remove('ready');
+      document.getElementById('shutter-btn').classList.remove('ready');
+    }
+
+    // ── 图片压缩 ──────────────────────────────
+    function compressImage(file, maxEdge, quality = 0.75) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            let w = img.width, h = img.height;
+            if (w <= maxEdge && h <= maxEdge) { resolve({ base64: e.target.result, width: w, height: h }); return; }
+            if (w > h) { h = Math.round(h * maxEdge / w); w = maxEdge; }
+            else       { w = Math.round(w * maxEdge / h); h = maxEdge; }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve({ base64: canvas.toDataURL('image/jpeg', quality), width: w, height: h });
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ── 加载步骤 ──────────────────────────────
+    function resetLoadingSteps() {
+      for (let i = 1; i <= 4; i++) {
+        const step = document.getElementById('step-' + i);
+        step.classList.remove('done', 'current');
+      }
+      document.getElementById('step-1').classList.add('current');
+    }
+    function advanceLoadingStep(n) {
+      for (let i = 1; i <= 4; i++) {
+        const step = document.getElementById('step-' + i);
+        if (i < n) { step.classList.add('done'); step.classList.remove('current'); }
+        else if (i === n) { step.classList.add('current'); step.classList.remove('done'); }
+        else { step.classList.remove('done', 'current'); }
+      }
+    }
+
+    // ── AI 分析（带重试）───────────────────────
+    async function startAnalysis(retryCount = 0) {
+      const MAX_RETRIES = 5;
+      if (!currentImage) { showToast('请先拍照或选择照片'); return; }
+      if (retryCount === 0) goToLoading();
+
+      // 检查缓存
+      const key = 'an_' + cacheKey([currentImage]);
+      if (retryCount === 0 && resultCache[key]) {
+        analysisResult = resultCache[key];
+        renderResults();
+        goToResult();
+        return;
+      }
+
+      try {
+        advanceLoadingStep(1); await sleep(400);
+        advanceLoadingStep(2); await sleep(400);
+        advanceLoadingStep(3);
+        const result = await callZhipuAPI(currentImage.base64, null, appMode);
+        resultCache[key] = result;
+        advanceLoadingStep(4); await sleep(300);
+        analysisResult = result;
+        renderResults();
+        goToResult();
+      } catch (err) {
+        console.error('分析失败:', err.message);
+        const isRateLimit = err.message.includes('访问量大') || err.message.includes('限流') ||
+                            err.message.includes('rate') || err.message.includes('429') ||
+                            err.message.includes('busy') || err.message.includes('并发');
+        if (isRateLimit && retryCount < MAX_RETRIES) {
+          const waitSec = (retryCount + 1) * 3;
+          document.getElementById('loading-title').textContent = `⏳ 访问拥挤，${waitSec}秒后自动重试…`;
+          document.getElementById('loading-subtitle').textContent = `第 ${retryCount + 1}/${MAX_RETRIES} 次重试`;
+          resetLoadingSteps();
+          await sleep(waitSec * 1000);
+          document.getElementById('loading-title').textContent = 'AI 正在分析中…';
+          document.getElementById('loading-subtitle').textContent = '请稍候，这可能需要几秒钟';
+          return startAnalysis(retryCount + 1);
+        }
+        showPage('page-camera');
+        showToast(isRateLimit ? '😅 当前访问量较大，请稍后再试' : '分析失败: ' + err.message);
+      }
+    }
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ── PK 四宫格逻辑 ──────────────────────────
+    function openSlot(index) {
+      currentSlotIndex = index;
+      showActionSheet();
+    }
+    let pendingReplace = false;
+    function showActionSheet() {
+      const closeOpt = document.getElementById('as-close-option');
+      if (pkPhotos[currentSlotIndex]) {
+        closeOpt.style.display = 'flex';
+      } else {
+        closeOpt.style.display = 'none';
+      }
+      document.getElementById('actionsheet').classList.add('show');
+    }
+    function removeSlotPhoto() {
+      closeActionSheet();
+      pkPhotos[currentSlotIndex] = null;
+      renderSlot(currentSlotIndex);
+      updatePKButton();
+      showToast('已关闭，可重新添加照片');
+    }
+    function closeActionSheet(e) {
+      if (e && e.target !== document.getElementById('actionsheet')) return;
+      document.getElementById('actionsheet').classList.remove('show');
+    }
+    function takePhotoForSlot() {
+      closeActionSheet();
+      document.getElementById('input-pk-camera').click();
+    }
+    function pickAlbumForSlot() {
+      closeActionSheet();
+      document.getElementById('input-pk-album').click();
+    }
+    function handleSlotFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
+
+      // PK 模式压缩更激进（多图传输），maxEdge 1024 + JPEG 0.65
+      compressImage(file, 1024, 0.65).then(result => {
+        pkPhotos[currentSlotIndex] = { base64: result.base64, file: file };
+        renderSlot(currentSlotIndex);
+        updatePKButton();
+      }).catch(err => {
+        console.error('压缩失败:', err);
+        showToast('图片处理失败，请重试');
+      });
+      event.target.value = '';
+    }
+    function renderSlot(index) {
+      const slot = document.getElementById('pkg-slot-' + index);
+      const photo = pkPhotos[index];
+      if (photo) {
+        slot.className = 'pkg-slot filled';
+        slot.innerHTML = `
+          <img src="${photo.base64}" alt="第${index+1}位" />
+          <span class="pkg-check">✓</span>
+          <span class="pkg-retake">↻ 重拍</span>
+        `;
+        slot.setAttribute('onclick', `openSlot(${index})`);
+      } else {
+        slot.className = 'pkg-slot empty';
+        slot.innerHTML = `
+          <span class="pkg-plus">+</span>
+          <span class="pkg-hint">添加照片</span>
+          <span class="pkg-label">第${index+1}位</span>
+        `;
+        slot.setAttribute('onclick', `openSlot(${index})`);
+      }
+    }
+    function updatePKButton() {
+      const count = pkPhotos.filter(Boolean).length;
+      const btn = document.getElementById('btn-pk-go');
+      const hint = document.getElementById('pkg-hint');
+      if (count >= 2) {
+        btn.className = 'btn-pk-go ready';
+        btn.textContent = `🤼 开始PK (${count}/4)`;
+        hint.textContent = `✅ 已选${count}张，点击开始PK`;
+      } else {
+        btn.className = 'btn-pk-go disabled';
+        btn.textContent = `🤼 开始PK（至少需要2张）`;
+        hint.textContent = count === 0
+          ? '💡 点击上方格子添加照片，最少2张，最多4张'
+          : `💡 还差${2-count}张，最少需要2张照片`;
+      }
+    }
+
+    async function startPKAnalysis(retryCount = 0) {
+      const MAX_RETRIES = 5;
+      const activePhotos = pkPhotos.filter(Boolean);
+      if (activePhotos.length < 2) { showToast('请至少添加2张照片'); return; }
+      if (retryCount === 0) goToLoading();
+
+      // 检查缓存（相同照片直接返回上次结果，保证评分一致）
+      const key = 'pk_' + cacheKey(activePhotos);
+      if (retryCount === 0 && resultCache[key]) {
+        analysisResult = resultCache[key];
+        renderPKResults(activePhotos);
+        goToPKResult();
+        return;
+      }
+
+      try {
+        advanceLoadingStep(1); await sleep(200);
+        advanceLoadingStep(3);
+        const allBase64 = activePhotos.map(p => p.base64);
+        const result = await callZhipuAPI(allBase64[0], allBase64.length > 1 ? allBase64[1] : null, 'pk', allBase64);
+        // 缓存结果
+        resultCache[key] = result;
+        advanceLoadingStep(4); await sleep(200);
+        analysisResult = result;
+        renderPKResults(activePhotos);
+        goToPKResult();
+      } catch (err) {
+        console.error('PK 分析失败:', err.message);
+        const isRateLimit = err.message.includes('访问量大') || err.message.includes('限流') ||
+                           err.message.includes('rate') || err.message.includes('429') ||
+                           err.message.includes('busy') || err.message.includes('并发');
+        if (isRateLimit && retryCount < MAX_RETRIES) {
+          const waitSec = (retryCount + 1) * 3;
+          document.getElementById('loading-title').textContent = `⏳ 访问拥挤，${waitSec}秒后自动重试…`;
+          document.getElementById('loading-subtitle').textContent = `第 ${retryCount + 1}/${MAX_RETRIES} 次重试`;
+          resetLoadingSteps();
+          await sleep(waitSec * 1000);
+          document.getElementById('loading-title').textContent = 'AI 正在裁决中…';
+          document.getElementById('loading-subtitle').textContent = '请稍候，正在对比多人颜值';
+          return startPKAnalysis(retryCount + 1);
+        }
+        showPage('page-pk-grid');
+        showToast(isRateLimit ? '😅 当前访问量较大，请稍后再试' : 'PK失败: ' + err.message);
+      }
+    }
+
+    function goToPKResult() { showPage('page-pk-result'); }
+
+    // 烟花庆祝动画
+    function spawnFireworks() {
+      const banner = document.querySelector('.pk-winner-banner');
+      if (!banner) return;
+      // 移除旧烟花
+      banner.querySelectorAll('.firework').forEach(f => f.remove());
+
+      const colors = ['#FFD700','#FF6B6B','#4D7CFE','#34C759','#AF52DE','#FF9500','#FF3B6C','#00C7BE'];
+      // 三波烟花
+      for (let wave = 0; wave < 3; wave++) {
+        setTimeout(() => {
+          const fw = document.createElement('div');
+          fw.className = 'firework';
+          // 12 个圆形粒子
+          for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * 360;
+            const dist = 40 + Math.random() * 60;
+            const rad = angle * Math.PI / 180;
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.setProperty('--dx', `${Math.cos(rad) * dist}px`);
+            p.style.setProperty('--dy', `${Math.sin(rad) * dist}px`);
+            p.style.background = colors[Math.floor(Math.random() * colors.length)];
+            p.style.animationDelay = `${Math.random() * 0.15}s`;
+            p.style.animationDuration = `${1.0 + Math.random() * 0.8}s`;
+            fw.appendChild(p);
+          }
+          // 6 个长条火花
+          for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * 360 + 30;
+            const dist = 50 + Math.random() * 50;
+            const rad = angle * Math.PI / 180;
+            const s = document.createElement('div');
+            s.className = 'spark';
+            s.style.setProperty('--dx', `${Math.cos(rad) * dist}px`);
+            s.style.setProperty('--dy', `${Math.sin(rad) * dist}px`);
+            s.style.background = colors[Math.floor(Math.random() * colors.length)];
+            s.style.animationDelay = `${Math.random() * 0.1}s`;
+            fw.appendChild(s);
+          }
+          banner.appendChild(fw);
+          // 自动清理
+          setTimeout(() => fw.remove(), 2000);
+        }, wave * 300);
+      }
+    }
+
+    // 生成四维度 SVG 雷达图
+    function renderRadarChart(dimensions) {
+      if (!dimensions) return '';
+      const CX = 55, CY = 50, R = 24;
+      const axes = [
+        { key: 'facial_features', label: '五官', angle: -90 },
+        { key: 'face_shape', label: '脸型', angle: 0 },
+        { key: 'skin', label: '皮肤', angle: 90 },
+        { key: 'temperament', label: '气质', angle: 180 }
+      ];
+      // 背景网格
+      let gridLines = '';
+      [0.25, 0.5, 0.75, 1.0].forEach(level => {
+        const pts = axes.map(a => {
+          const rad = a.angle * Math.PI / 180;
+          return `${(CX + Math.cos(rad) * R * level).toFixed(1)},${(CY + Math.sin(rad) * R * level).toFixed(1)}`;
+        }).join(' ');
+        gridLines += `<polyline class="grid" points="${pts}" />`;
+      });
+      // 轴线
+      let axisLines = axes.map(a => {
+        const rad = a.angle * Math.PI / 180;
+        return `<line class="axis" x1="${CX}" y1="${CY}" x2="${(CX + Math.cos(rad) * R).toFixed(1)}" y2="${(CY + Math.sin(rad) * R).toFixed(1)}" />`;
+      }).join('');
+      // 标签（维度名 + 分数）
+      let labels = axes.map(a => {
+        const score = dimensions[a.key] || 0;
+        const rad = a.angle * Math.PI / 180;
+        const lr = R + 16;
+        let lx = CX + Math.cos(rad) * lr;
+        let ly = CY + Math.sin(rad) * lr;
+        if (a.angle === -90) ly += 3;
+        if (a.angle === 90) ly -= 1;
+        if (a.angle === 0) lx -= 1;
+        if (a.angle === 180) lx += 1;
+        return `<text class="label" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" dominant-baseline="middle">${a.label} ${score.toFixed(1)}</text>`;
+      }).join('');
+      // 数据多边形
+      const dataPts = axes.map(a => {
+        const score = dimensions[a.key] || 5;
+        const rad = a.angle * Math.PI / 180;
+        const r = R * (score / 10);
+        return `${(CX + Math.cos(rad) * r).toFixed(1)},${(CY + Math.sin(rad) * r).toFixed(1)}`;
+      }).join(' ');
+      // 数据点
+      let dots = axes.map(a => {
+        const score = dimensions[a.key] || 5;
+        const rad = a.angle * Math.PI / 180;
+        const r = R * (score / 10);
+        return `<circle class="dot" cx="${(CX + Math.cos(rad) * r).toFixed(1)}" cy="${(CY + Math.sin(rad) * r).toFixed(1)}" r="2" />`;
+      }).join('');
+
+      return `<svg class="pk-radar" viewBox="0 0 110 100">${gridLines}${axisLines}${labels}<polygon class="data" points="${dataPts}" />${dots}</svg>`;
+    }
+
+    function renderPKResults(activePhotos) {
+      const r = analysisResult;
+      if (r.mode !== 'pk') return;
+
+      const persons = r.persons || [];
+      // 防御：AI 可能返回非数字 winner_index，做归一化
+      let winnerIndex = parseInt(r.winner_index);
+      if (isNaN(winnerIndex) || winnerIndex < 0 || winnerIndex >= persons.length) winnerIndex = 0;
+      // 清洗 AI 可能返回的无意义 label（如"索引0"）
+      const cleanLabel = (p, i) => {
+        if (!p || !p.label) return '第'+(i+1)+'位';
+        const lbl = String(p.label);
+        if (/索引|index/i.test(lbl) || lbl.length > 10) return '第'+(i+1)+'位';
+        return lbl;
+      };
+      const rankings = r.rankings || [];
+      const rankEmoji = ['🥇', '🥈', '🥉', '🏅'];
+
+      // 照片区 — 按人数自适应布局
+      const heroArea = document.querySelector('#page-pk-result .pk-result-hero');
+      const count = activePhotos.length;
+      heroArea.className = 'pk-result-hero count-' + count;
+
+      let photoHTML = '';
+      activePhotos.forEach((photo, i) => {
+        const person = persons[i] || {};
+        const score = person.score;
+        const rank = rankings.indexOf(i);
+        const rankIcon = rank >= 0 && rank < 4 ? rankEmoji[rank] : '';
+        const isWinner = i === winnerIndex;
+
+        photoHTML += `
+          <div class="pk-hero-card${isWinner ? ' winner-card' : ''}">
+            <div class="pk-hero-photo">
+              ${rankIcon ? `<span class="pk-hero-rank">${rankIcon}</span>` : ''}
+              <img src="${photo.base64}" alt="第${i+1}位" />
+            </div>
+            <div class="pk-hero-score">${typeof score === 'number' ? score.toFixed(1) : '--'}</div>
+            ${renderRadarChart(person.dimensions)}
+            <div class="pk-hero-label">${isWinner ? '🏆 胜者' : '第'+(i+1)+'位'}</div>
+          </div>`;
+        // 2人模式：中间加 VS
+        if (i < activePhotos.length - 1 && count <= 2) {
+          photoHTML += '<div class="pk-hero-vs">VS</div>';
+        }
+        // 3人模式：胜者卡片前后加 VS
+        if (count === 3 && !isWinner && i < activePhotos.length - 1 && activePhotos[i+1] && (i+1 === winnerIndex || (i+1 < activePhotos.length && (i+1) !== winnerIndex))) {
+          // VS 简化：3人只在中间穿插
+        }
+      });
+      heroArea.innerHTML = photoHTML;
+
+      // 胜者公告 + 烟花
+      if (persons[winnerIndex]) {
+        const winner = persons[winnerIndex];
+        document.getElementById('pk-winner-text').textContent = `🏆 ${cleanLabel(winner, winnerIndex)} 胜出！`;
+        setTimeout(spawnFireworks, 200);
+      } else {
+        document.getElementById('pk-winner-text').textContent = '🏆 评分完成';
+      }
+      document.getElementById('pk-winner-reason').textContent = r.winner_reason || '';
+
+      // 所有人评分列表
+      let dimHTML = '';
+      // 卡通颜值排名
+      if (rankings.length > 0) {
+        dimHTML += '<div class="pk-dim-title" style="font-size:18px;margin-bottom:14px">🏅 颜值排行榜</div>';
+        const rankClass = ['rank-1','rank-2','rank-3','rank-other'];
+        rankings.forEach((idx, rank) => {
+          const person = persons[idx];
+          if (!person) return;
+          const rc = rankClass[rank] || 'rank-other';
+          // 星级评价
+          const stars = '⭐'.repeat(Math.max(1, 5 - rank));
+          dimHTML += `
+            <div class="pk-rank-card ${rc}" style="animation-delay:${rank * 0.12}s">
+              <div class="pk-rank-header">
+                <span class="pk-rank-emoji">${rankEmoji[rank] || '🏅'}</span>
+                <span class="pk-rank-name">${cleanLabel(person, idx)}</span>
+                <span class="pk-rank-score-badge">${person.score.toFixed(1)}</span>
+              </div>
+              <div class="pk-rank-comment">${escapeHTML(person.overall_comment || '')}</div>
+              <div class="pk-rank-stars">${stars}</div>
+            </div>`;
+        });
+      }
+      document.getElementById('pk-dimensions').innerHTML = dimHTML;
+      document.getElementById('pk-overall-comment').innerHTML = '<div class="pk-overall-title">💬 综合评语</div>' + escapeHTML(r.overall_comment || '');
+      document.getElementById('page-pk-result').scrollTop = 0;
+    }
+
+    // ── API 调用 ──────────────────────────────
+    async function callZhipuAPI(imageBase64, imageBase64_2 = null, mode = 'analyze', extraImages = null) {
+      const body = { imageBase64, mode };
+      if (imageBase64_2) body.imageBase64_2 = imageBase64_2;
+      if (extraImages && extraImages.length > 0) body.images = extraImages;
+
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        let errMsg = `请求失败 (${response.status})`;
+        try {
+          const errData = await response.json();
+          if (errData.error) errMsg = errData.error;
+        } catch (e) {}
+        throw new Error(`[${response.status}] ${errMsg}`);
+      }
+
+      return response.json();
+    }
+
+    // ── 结果渲染 ──────────────────────────────
+    function renderResults() {
+      if (!analysisResult) return;
+      const r = analysisResult;
+
+      // 评分
+      const score = r.overall_score;
+      document.getElementById('score-num').textContent = score.toFixed(1);
+      document.getElementById('score-num').style.animation = 'none';
+      document.getElementById('score-num').offsetHeight;
+      document.getElementById('score-num').style.animation = 'countUp 0.6s ease-out both';
+
+      // 环形进度
+      const circumference = 2 * Math.PI * 70; // r=70
+      const offset = circumference - (score / 10) * circumference;
+      setTimeout(() => {
+        document.getElementById('score-ring-fg').style.strokeDasharray = circumference;
+        document.getElementById('score-ring-fg').style.strokeDashoffset = offset;
+      }, 200);
+
+      // 等级
+      let levelText = '', levelBg = '';
+      if (score >= 9.0)      { levelText = '🌟 惊艳'; levelBg = '#002FA7'; }
+      else if (score >= 8.0) { levelText = '✨ 优秀'; levelBg = '#0052CC'; }
+      else if (score >= 7.0) { levelText = '👍 良好'; levelBg = '#34C759'; }
+      else if (score >= 6.0) { levelText = '💪 中等'; levelBg = '#FF9500'; }
+      else if (score >= 5.0) { levelText = '📈 一般'; levelBg = '#FF6B35'; }
+      else                   { levelText = '🌱 潜力股'; levelBg = '#999'; }
+      const levelEl = document.getElementById('score-level');
+      levelEl.textContent = levelText;
+      levelEl.style.background = levelBg;
+
+      // 总评
+      document.getElementById('comment-overall').textContent = r.overall_comment || '';
+
+      // 维度卡片
+      const dims = r.dimensions;
+      const dimNames = { facial_features: '五官', face_shape: '脸型', skin: '皮肤', temperament: '气质' };
+      const dimIcons = { facial_features: '👁️', face_shape: '🔷', skin: '✨', temperament: '🌟' };
+      let dimHTML = '';
+      for (const [key, label] of Object.entries(dimNames)) {
+        const d = dims[key];
+        if (!d) continue;
+        const pct = Math.round(d.score * 10);
+        dimHTML += `
+          <div class="dim-card">
+            <div class="dim-card-header">
+              <span class="dim-card-label"><span class="dicon">${dimIcons[key]||''}</span>${label}</span>
+              <span class="dim-card-score">${d.score.toFixed(1)}</span>
+            </div>
+            <div class="dim-card-bar"><div class="dim-card-fill" style="width:${pct}%"></div></div>
+            <div class="dim-card-comment">${escapeHTML(d.comment)}</div>
+          </div>`;
+      }
+      document.getElementById('dimensions').innerHTML = dimHTML;
+
+      // 优势
+      let sHTML = '';
+      (r.strengths || []).forEach(s => {
+        sHTML += `<div class="insight-card"><div class="insight-icon strength">👍</div><div class="insight-body"><h4>${escapeHTML(s.title)}</h4><p>${escapeHTML(s.detail)}</p></div></div>`;
+      });
+      document.getElementById('strengths-list').innerHTML = sHTML || emptyMsg();
+
+      // 劣势
+      let wHTML = '';
+      (r.weaknesses || []).forEach(w => {
+        wHTML += `<div class="insight-card"><div class="insight-icon weakness">💡</div><div class="insight-body"><h4>${escapeHTML(w.title)}</h4><p>${escapeHTML(w.detail)}</p></div></div>`;
+      });
+      document.getElementById('weaknesses-list').innerHTML = wHTML || emptyMsg();
+
+      // 计划
+      const plan = r.improvement_plan || {};
+      let pHTML = '';
+      if (plan.short_term) pHTML += `<div class="plan-card short"><h4>🏃 短期计划 <span class="plan-badge">1周内</span></h4><p>${escapeHTML(plan.short_term)}</p></div>`;
+      if (plan.mid_term)   pHTML += `<div class="plan-card mid"><h4>📆 中期计划 <span class="plan-badge">1个月内</span></h4><p>${escapeHTML(plan.mid_term)}</p></div>`;
+      if (plan.long_term)  pHTML += `<div class="plan-card long"><h4>🎯 长期计划 <span class="plan-badge">3个月内</span></h4><p>${escapeHTML(plan.long_term)}</p></div>`;
+      document.getElementById('plan-content').innerHTML = pHTML || emptyMsg();
+
+      // 穿搭
+      const style = r.style_advice || {};
+      let stHTML = '';
+      if (style.face_style || (style.recommended_styles && style.recommended_styles.length > 0)) {
+        stHTML += '<div class="style-tags">';
+        if (style.face_style) stHTML += `<span class="style-tag main">${escapeHTML(style.face_style)}</span>`;
+        (style.recommended_styles || []).forEach(s => { stHTML += `<span class="style-tag">${escapeHTML(s)}</span>`; });
+        stHTML += '</div>';
+      }
+      if (style.color_suggestions && style.color_suggestions.length > 0) {
+        const colorMap = { '浅蓝':'#A8D8EA','蓝':'#2B7BBD','粉色':'#FFB6C1','粉':'#FFB6C1','米白':'#F5F0E8','白':'#FFFFFF','淡紫':'#C3AED6','紫':'#8B5CF6','黑':'#1A1A1A','灰':'#9CA3AF','红':'#EF4444','绿':'#10B981','黄':'#F59E0B','橙':'#F97316','藏青':'#1E3A5F','卡其':'#C4A882' };
+        stHTML += '<div class="outfit-card"><h4>🎨 推荐配色</h4><div class="color-dots">';
+        style.color_suggestions.forEach(c => { stHTML += `<span class="color-dot" style="background:${colorMap[c]||'#CCC'}" title="${escapeHTML(c)}"></span>`; });
+        stHTML += `<p style="margin-top:8px">${style.color_suggestions.join('、')}</p></div></div>`;
+      }
+      (style.outfit_tips || []).forEach(tip => {
+        stHTML += `<div class="outfit-card"><h4>👗 ${escapeHTML(tip.title)}</h4><p>${escapeHTML(tip.detail)}</p></div>`;
+      });
+      document.getElementById('style-content').innerHTML = stHTML || emptyMsg();
+
+      switchTab('score');
+      document.getElementById('page-result').scrollTop = 0;
+    }
+
+    function emptyMsg() { return '<p style="text-align:center;color:#B0B0BA;padding:48px 0;font-size:14px">暂无数据</p>'; }
+    function escapeHTML(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+
+    // ── Tab ────────────────────────────────────
+    function switchTab(name) {
+      document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      const btn = document.querySelector(`.tab-pill[data-tab="${name}"]`);
+      const content = document.getElementById('tab-' + name);
+      if (btn) btn.classList.add('active');
+      if (content) content.classList.add('active');
+      if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+
+    document.getElementById('tab-nav').addEventListener('click', function(e) {
+      const btn = e.target.closest('.tab-pill');
+      if (!btn) return;
+      switchTab(btn.dataset.tab);
+    });
+
+    // ── 分享 ───────────────────────────────────
+    function shareResult() {
+      if (!analysisResult) return;
+      const text = `【美评】我的颜值评分：${analysisResult.overall_score.toFixed(1)}/10 ✨\n${(analysisResult.overall_comment||'').slice(0,60)}…`;
+      if (navigator.share) {
+        navigator.share({ title: '美评 - AI颜值评测', text: text }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(text).then(() => showToast('📋 已复制到剪贴板')).catch(() => showToast('分享功能暂不可用'));
+      }
+    }
+
+    // ── Splash 过场动画 ─────────────────────────
+    let splashTimer = null;
+    let splashDone = false;
+
+    function startSplashAnimation() {
+      splashDone = false;
+      clearTimeout(splashTimer);
+
+      const home = document.getElementById('page-home');
+      const logo = home.querySelector('.home-logo-wrap');
+      const brand = home.querySelector('.home-brand-wrap');
+      const tagline = home.querySelector('.home-tagline');
+
+      // 重置状态
+      home.classList.remove('splash-out');
+      [logo, brand, tagline].forEach(el => el.classList.remove('splash-anim'));
+
+      // 强制回流后启动动画
+      void home.offsetWidth;
+      logo.classList.add('splash-anim');
+      brand.classList.add('splash-anim');
+      tagline.classList.add('splash-anim');
+
+      // 2.5s 后自动跳转
+      splashTimer = setTimeout(() => {
+        if (splashDone) return;
+        splashDone = true;
+        transitionToMenu();
+      }, 2500);
+    }
+
+    function skipSplash() {
+      if (splashDone) return;
+      splashDone = true;
+      clearTimeout(splashTimer);
+      transitionToMenu();
+    }
+
+    function transitionToMenu() {
+      const home = document.getElementById('page-home');
+      const menu = document.getElementById('page-menu');
+
+      // 主菜单放入布局
+      menu.classList.add('active');
+      menu.style.animation = 'none';
+      menu.style.opacity = '0';
+      void menu.offsetWidth;
+
+      // 首页退出
+      home.classList.add('splash-out');
+
+      // 主菜单入场
+      menu.style.animation = '';
+      menu.classList.add('splash-next');
+
+      // 入场后启动卡片 stagger 动画
+      setTimeout(() => {
+        const cards = menu.querySelectorAll('.menu-card');
+        cards.forEach((c, i) => {
+          c.style.animationDelay = (i * 0.1) + 's';
+          c.classList.add('anim-in');
+        });
+      }, 300);
+
+      // 动画结束后清理
+      setTimeout(() => {
+        home.classList.remove('active', 'splash-out');
+        menu.classList.remove('splash-next');
+        menu.style.opacity = '';
+        menu.style.animation = 'none';
+      }, 500);
+    }
+
+    // ── 初始化 ─────────────────────────────────
+    function init() {
+      updateMenuHint();
+      // 菜单卡片滚动指示器
+      const menuCards = document.getElementById('menu-cards');
+      const menuDots = document.querySelectorAll('.menu-dot');
+      if (menuCards) {
+        menuCards.addEventListener('scroll', () => {
+          const idx = Math.round(menuCards.scrollLeft / (155 + 12));
+          menuDots.forEach((d, i) => d.classList.toggle('active', i === idx));
+        });
+      }
+      startSplashAnimation();
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(r => console.log('SW:', r.scope)).catch(() => {});
+    }
+    init();
+  </script>
+</body>
+</html>
